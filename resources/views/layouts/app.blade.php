@@ -288,6 +288,125 @@
 
 <!-- Bootstrap JS -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+@auth
+{{-- ─── Pusher JS SDK ─────────────────────────────────────────────────── --}}
+<script src="https://js.pusher.com/8.4/pusher.min.js"></script>
+<script>
+    // ── Pusher global setup ──────────────────────────────────────────────
+    Pusher.logToConsole = {{ config('app.debug') ? 'true' : 'false' }};
+
+    window.pusher = new Pusher('{{ config('broadcasting.connections.pusher.key') }}', {
+        cluster:         '{{ config('broadcasting.connections.pusher.options.cluster') }}',
+        forceTLS:        true,
+        // Endpoint autentikasi private channel — gunakan CSRF token agar tidak ditolak
+        authEndpoint:    '{{ url('/broadcasting/auth') }}',
+        auth: {
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept':       'application/json',
+            }
+        }
+    });
+
+    // ── Helper: tampilkan toast notifikasi ──────────────────────────────
+    window.showToast = function(message, type = 'info') {
+        const colors = {
+            success: '#D1FAE5',  textSuccess: '#065F46',
+            info:    '#DBEAFE',  textInfo:    '#1E40AF',
+            warning: '#FEF3C7',  textWarning: '#92400E',
+            danger:  '#FEE2E2',  textDanger:  '#991B1B',
+        };
+        const bg   = colors[type]   || colors.info;
+        const text = colors['text' + type.charAt(0).toUpperCase() + type.slice(1)] || colors.textInfo;
+
+        const id   = 'toast-' + Date.now();
+        const html = `
+            <div id="${id}" class="toast align-items-center border-0 show"
+                 role="alert" style="background:${bg};color:${text};border-radius:12px;min-width:240px;">
+                <div class="d-flex">
+                    <div class="toast-body fw-600 small">${message}</div>
+                    <button type="button" class="btn-close btn-close-sm me-2 m-auto"
+                            data-bs-dismiss="toast" style="font-size:.65rem;"></button>
+                </div>
+            </div>`;
+
+        let container = document.getElementById('realtime-toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'realtime-toast-container';
+            container.style.cssText = 'position:fixed;top:70px;right:12px;z-index:9999;display:flex;flex-direction:column;gap:8px;';
+            document.body.appendChild(container);
+        }
+        container.insertAdjacentHTML('beforeend', html);
+        // Auto-remove setelah 5 detik
+        setTimeout(() => document.getElementById(id)?.remove(), 5000);
+    };
+
+    @php $role = auth()->user()->getRoleNames()->first(); @endphp
+
+    // ── Subscribe berdasarkan role ───────────────────────────────────────
+    @if($role === 'buyer')
+        // Buyer: dengarkan status pesanan miliknya
+        window.myChannel = pusher.subscribe('private-user.{{ auth()->id() }}');
+
+        window.myChannel.bind('order.status.updated', function(data) {
+            console.log('[Pusher] order.status.updated', data);
+
+            // Update badge & text di halaman manapun yang menampilkan status pesanan ini
+            const badge = document.querySelector(`[data-order-id="${data.order_id}"] .order-status-badge`);
+            if (badge) {
+                badge.textContent = data.status_label;
+            }
+
+            // Jika user sedang di halaman detail pesanan yang sama → update UI
+            const isDetailPage = document.body.dataset.orderId == data.order_id;
+            if (isDetailPage) {
+                updateOrderDetailStatus(data);
+            }
+
+            showToast(`🔔 Pesanan #${data.order_id}: ${data.status_label}`, 'success');
+        });
+
+    @elseif($role === 'seller')
+        // Seller: dengarkan pesanan baru & update status
+        @php $shopId = auth()->user()->shop?->id; @endphp
+        @if($shopId)
+        window.shopChannel = pusher.subscribe('private-shop.{{ $shopId }}');
+
+        window.shopChannel.bind('order.new', function(data) {
+            console.log('[Pusher] order.new', data);
+            showToast(`🛍️ Pesanan baru dari ${data.buyer_name}! (${data.items_count} item)`, 'success');
+
+            // Jika di halaman orders → tambahkan notif dot / reload
+            if (document.getElementById('seller-orders-list')) {
+                prependNewOrderBadge(data);
+            }
+        });
+
+        window.shopChannel.bind('order.status.updated', function(data) {
+            console.log('[Pusher] order.status.updated (seller)', data);
+            const badge = document.querySelector(`[data-order-id="${data.order_id}"] .order-status-badge`);
+            if (badge) badge.textContent = data.status_label;
+        });
+        @endif
+
+    @elseif($role === 'driver')
+        // Driver: dengarkan job baru
+        window.driverChannel = pusher.subscribe('driver.jobs');
+
+        window.driverChannel.bind('driver.job.new', function(data) {
+            console.log('[Pusher] driver.job.new', data);
+            showToast(`🛵 Ada job baru! ke ${data.delivery_address}`, 'warning');
+
+            if (document.getElementById('driver-jobs-list')) {
+                prependNewJobBadge(data);
+            }
+        });
+    @endif
+</script>
+@endauth
+
 <script>
     // Auto-dismiss alerts
     setTimeout(() => {

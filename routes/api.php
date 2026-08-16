@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\BroadcastTokenController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\ShopController;
 use Illuminate\Http\Request;
@@ -33,6 +34,9 @@ Route::middleware('auth:sanctum')->group(function () {
     // Auth
     Route::get('/auth/me',      [AuthController::class, 'me']);
     Route::post('/auth/logout', [AuthController::class, 'logout']);
+
+    // Realtime: Pusher credentials & channel list for mobile clients
+    Route::get('/realtime/channels', [BroadcastTokenController::class, 'channels']);
 
     // ── Buyer ──────────────────────────────────────────────────────────────
     Route::middleware('role:buyer')->prefix('buyer')->group(function () {

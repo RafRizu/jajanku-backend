@@ -1,5 +1,10 @@
 @extends('layouts.app')
 @section('title', 'Detail Pesanan #' . $order->id)
+@php
+    // Untuk Pusher JS: tandai halaman ini agar global listener tahu order ID mana yang sedang dibuka
+    $currentOrderId = $order->id;
+    $statusOrder = ['pending', 'confirmed', 'processing', 'on_delivery', 'delivered'];
+@endphp
 
 @section('content')
 <div class="p-3">
@@ -14,7 +19,10 @@
     <div class="card border-0 mb-3 p-3" style="border-radius:16px; box-shadow:0 2px 8px rgba(0,0,0,.06);">
         <h6 class="fw-700 mb-3" style="color:#1F2937;">📦 Status Pesanan</h6>
 
-        <span class="badge badge-status badge-{{ $order->status_badge }} mb-3" style="font-size:.8rem;">
+        {{-- Badge status — ID untuk diupdate oleh Pusher JS --}}
+        <span id="realtime-status-badge"
+              class="badge badge-status badge-{{ $order->status_badge }} mb-3"
+              style="font-size:.8rem;">
             {{ $order->status_label }}
         </span>
 
@@ -32,12 +40,16 @@
 
         @foreach($steps as $statusKey => $step)
         @php $idx = array_search($statusKey, $statusOrder); @endphp
-        <div class="d-flex align-items-center gap-3 py-2">
+        <div class="d-flex align-items-center gap-3 py-2"
+             id="step-{{ $statusKey }}"
+             data-step-index="{{ $idx }}">
             <div class="status-dot {{ $idx < $currentIdx ? 'done' : ($idx === $currentIdx ? 'active' : '') }}"
+                 id="dot-{{ $statusKey }}"
                  style="{{ $idx === $currentIdx ? 'width:14px;height:14px;box-shadow:0 0 0 4px rgba(255,107,53,.25);' : '' }}">
             </div>
             <div>
-                <span style="font-size:.8rem;" class="fw-{{ $idx === $currentIdx ? '700' : '500' }}
+                <span id="step-label-{{ $statusKey }}"
+                      style="font-size:.8rem;" class="fw-{{ $idx === $currentIdx ? '700' : '500' }}
                      {{ $idx > $currentIdx ? 'text-muted' : '' }}">
                     {{ $step['icon'] }} {{ $step['label'] }}
                 </span>
@@ -118,3 +130,61 @@
     @endif
 </div>
 @endsection
+
+@push('scripts')
+<script>
+// ── Tandai body agar listener global tahu order mana yang sedang dibuka ──
+document.body.dataset.orderId = {{ $currentOrderId }};
+
+// Status badge class mapping
+const statusBadgeMap = {
+    pending:     'badge-warning',
+    confirmed:   'badge-info',
+    processing:  'badge-primary',
+    on_delivery: 'badge-orange',
+    delivered:   'badge-success',
+    cancelled:   'badge-danger',
+};
+
+const statusOrder = @json($statusOrder);
+
+// Dipanggil oleh global Pusher listener di layout
+window.updateOrderDetailStatus = function(data) {
+    const newStatus = data.status;
+    const newIdx    = statusOrder.indexOf(newStatus);
+
+    // 1. Update badge teks & warna
+    const badge = document.getElementById('realtime-status-badge');
+    if (badge) {
+        // Hapus semua class badge
+        Object.values(statusBadgeMap).forEach(c => badge.classList.remove(c));
+        badge.classList.add(statusBadgeMap[newStatus] || 'badge-secondary');
+        badge.textContent = data.status_label;
+    }
+
+    // 2. Update timeline dots
+    statusOrder.forEach((key, idx) => {
+        const dot   = document.getElementById(`dot-${key}`);
+        const label = document.getElementById(`step-label-${key}`);
+        if (!dot || !label) return;
+
+        dot.className   = 'status-dot';
+        dot.style.cssText = '';
+        label.className = '';
+        label.style.fontSize = '.8rem';
+
+        if (idx < newIdx) {
+            dot.classList.add('done');
+            label.classList.add('fw-500');
+        } else if (idx === newIdx) {
+            dot.classList.add('active');
+            dot.style.cssText = 'width:14px;height:14px;box-shadow:0 0 0 4px rgba(255,107,53,.25);';
+            label.classList.add('fw-700');
+        } else {
+            dot.classList.add('');
+            label.classList.add('fw-500', 'text-muted');
+        }
+    });
+};
+</script>
+@endpush

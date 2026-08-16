@@ -19,7 +19,10 @@
     </div>
 
     @forelse($orders as $order)
-    <div class="card border-0 mb-3 p-3" style="border-radius:16px; box-shadow:0 2px 8px rgba(0,0,0,.06);">
+    <div class="card border-0 mb-3 p-3"
+         id="seller-orders-list"
+         data-order-id="{{ $order->id }}"
+         style="border-radius:16px; box-shadow:0 2px 8px rgba(0,0,0,.06);">
         <!-- Header -->
         <div class="d-flex justify-content-between align-items-start mb-2">
             <div>
@@ -31,7 +34,9 @@
                     &bull; {{ ucfirst($order->delivery_type) }}
                 </p>
             </div>
-            <span class="badge badge-status badge-{{ $order->status_badge }}">{{ $order->status_label }}</span>
+            <span class="badge badge-status badge-{{ $order->status_badge }} order-status-badge">
+                {{ $order->status_label }}
+            </span>
         </div>
 
         <!-- Items -->
@@ -109,3 +114,36 @@
     @endif
 </div>
 @endsection
+
+@push('scripts')
+<script>
+// Dipanggil oleh global Pusher listener di layout saat ada pesanan baru
+window.prependNewOrderBadge = function(data) {
+    // Tampilkan tombol "Lihat Pesanan Baru" di atas list
+    const existing = document.getElementById('new-order-alert-bar');
+    if (existing) {
+        // Sudah ada banner, tambahkan counter saja
+        const counter = existing.querySelector('.new-order-count');
+        if (counter) counter.textContent = parseInt(counter.textContent) + 1;
+        return;
+    }
+
+    const bar = document.createElement('div');
+    bar.id = 'new-order-alert-bar';
+    bar.style.cssText = 'position:sticky;top:56px;z-index:99;margin:-4px -0px 12px;cursor:pointer;';
+    bar.innerHTML = `
+        <div style="background:linear-gradient(135deg,#FF6B35,#FF8C42);color:white;padding:10px 16px;
+                    border-radius:12px;display:flex;align-items:center;justify-content:space-between;
+                    box-shadow:0 4px 16px rgba(255,107,53,.4);font-size:.85rem;font-weight:600;">
+            <span>🛒 <span class="new-order-count">1</span> Pesanan baru masuk dari ${data.buyer_name}!</span>
+            <span onclick="location.reload()"
+                  style="background:rgba(255,255,255,.25);padding:4px 10px;border-radius:8px;font-size:.75rem;">
+                Refresh
+            </span>
+        </div>`;
+
+    const list = document.querySelector('.p-3');
+    if (list) list.prepend(bar);
+};
+</script>
+@endpush

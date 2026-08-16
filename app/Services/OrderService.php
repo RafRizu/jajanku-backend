@@ -2,6 +2,9 @@
 
 namespace App\Services;
 
+use App\Events\NewDriverJobAvailable;
+use App\Events\NewOrderPlaced;
+use App\Events\OrderStatusUpdated;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Payment;
@@ -131,7 +134,12 @@ class OrderService
 
             $this->clearCart();
 
-            return $order->load('items.product', 'payment', 'shop');
+            $order->load('items.product', 'payment', 'shop');
+
+            // Broadcast ke seller: ada pesanan baru masuk
+            broadcast(new NewOrderPlaced($order))->toOthers();
+
+            return $order;
         });
     }
 
@@ -157,10 +165,21 @@ class OrderService
 
     /**
      * Update order status (for sellers and drivers).
+     * Broadcasts realtime events to relevant parties.
      */
     public function updateStatus(Order $order, string $status): Order
     {
         $order->update(['status' => $status]);
-        return $order->fresh();
+        $order = $order->fresh();
+
+        // Broadcast ke buyer & seller: status berubah
+        broadcast(new OrderStatusUpdated($order));
+
+        // Jika status menjadi on_delivery, beritahu semua driver ada job baru
+        if ($status === Order::STATUS_ON_DELIVERY) {
+            broadcast(new NewDriverJobAvailable($order));
+        }
+
+        return $order;
     }
 }
