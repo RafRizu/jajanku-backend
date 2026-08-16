@@ -1,58 +1,248 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# 🍱 Jajanku Backend — Dokumentasi Teknis
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Aplikasi backend berbasis **Laravel 13** untuk platform food delivery kampus **Jajanku**. Proyek ini menyediakan API RESTful untuk aplikasi mobile (Flutter/React Native) serta antarmuka web Blade responsif untuk Buyer, Seller, Driver, dan Admin.
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## 📌 Daftar Isi
+1. [Arsitektur & Teknologi](#-arsitektur--teknologi)
+2. [Fitur Utama](#-fitur-utama)
+3. [Skema Database & Relasi](#-skema-database--relasi)
+4. [Role & Pengguna](#-role--pengguna)
+5. [End-to-End Realtime Setup (Broadcasting)](#-end-to-end-realtime-setup-broadcasting)
+6. [Daftar REST API Endpoints](#-daftar-rest-api-endpoints)
+7. [Penanganan Ngrok & Local Tunneling](#-penanganan-ngrok--local-tunneling)
+8. [Panduan Instalasi & Jalankan](#-panduan-instalasi--jalankan)
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+---
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+## 🛠️ Arsitektur & Teknologi
 
-## Learning Laravel
+* **Framework Core**: Laravel 13 (PHP 8.3+)
+* **Autentikasi**: Laravel Sanctum (Token-based API authentication & Stateful Web Session)
+* **Otorisasi**: Spatie Laravel Permission (RBAC: `admin`, `seller`, `driver`, `buyer`)
+* **Realtime Engine**: Laravel Broadcasting + Pusher PHP Server (`pusher/pusher-php-server`)
+* **Database**: MySQL / SQLite (Development)
+* **Frontend Web**: Laravel Blade + Bootstrap 5.3 + Pusher JS SDK
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+---
 
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+## ✨ Fitur Utama
 
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
+### 🛒 1. Pembeli (Buyer)
+* Jelajah warung & produk makanan/minuman.
+* Keranjang belanja (Session-based & API stateful).
+* Checkout pesanan dengan pilihan *delivery* (antar) atau *pickup* (ambil sendiri).
+* Upload bukti pembayaran (Transfer BCA/QRIS).
+* Live status tracking pesanan secara realtime.
 
-## Agentic Development
+### 🏪 2. Penjual (Seller / Warung)
+* Kelola profil warung (Nama, Alamat, Foto, Jam Buka).
+* Manajemen produk / menu (CRUD, Toggle stok habis/tersedia).
+* Dashboard statistik penjualan.
+* Notifikasi realtime saat ada pesanan baru masuk (`NewOrderPlaced`).
+* Pemrosesan pesanan (Konfirmasi ➔ Proses ➔ Minta Driver).
 
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+### 🛵 3. Pengemudi (Driver)
+* Notifikasi realtime saat ada pesanan siap diantar (`NewDriverJobAvailable`).
+* Ambil (accept) pekerjaan pengiriman.
+* Konfirmasi penjemputan dari toko dan konfirmasi pesanan selesai.
+* Riwayat pengiriman.
 
-```bash
-composer require laravel/boost --dev
+### 🛡️ 4. Administrator (Admin)
+* Manajemen pengguna & perizinan role.
+* Pengelolaan kategori produk.
+* Monitoring warung dan statistik transaksi platform.
 
-php artisan boost:install
+---
+
+## 🗄️ Skema Database & Relasi
+
+```mermaid
+erDiagram
+    USERS ||--o{ SHOPS : "owns (seller)"
+    USERS ||--o{ ORDERS : "places (buyer)"
+    USERS ||--o{ ORDERS : "delivers (driver)"
+    SHOPS ||--o{ PRODUCTS : "contains"
+    CATEGORIES ||--o{ PRODUCTS : "classifies"
+    SHOPS ||--o{ ORDERS : "receives"
+    ORDERS ||--o{ ORDER_ITEMS : "contains"
+    PRODUCTS ||--o{ ORDER_ITEMS : "ordered as"
+    ORDERS ||--|| PAYMENTS : "has"
+
+    USERS {
+        bigint id PK
+        string name
+        string email
+        string phone
+        string password
+    }
+
+    SHOPS {
+        bigint id PK
+        bigint user_id FK
+        string name
+        string address
+        string phone
+        boolean is_open
+    }
+
+    PRODUCTS {
+        bigint id PK
+        bigint shop_id FK
+        bigint category_id FK
+        string name
+        decimal price
+        boolean is_available
+    }
+
+    ORDERS {
+        bigint id PK
+        bigint user_id FK
+        bigint shop_id FK
+        bigint driver_id FK
+        string status "pending|confirmed|processing|on_delivery|delivered|cancelled"
+        decimal total_price
+        decimal delivery_fee
+        string delivery_type "delivery|pickup"
+    }
+
+    ORDER_ITEMS {
+        bigint id PK
+        bigint order_id FK
+        bigint product_id FK
+        integer quantity
+        decimal price
+    }
+
+    PAYMENTS {
+        bigint id PK
+        bigint order_id FK
+        string method "transfer|cash|qris"
+        string status "pending|paid"
+        string proof_image
+    }
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+---
 
-## Contributing
+## 🔴 End-to-End Realtime Setup (Broadcasting)
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Fitur realtime menggunakan **Laravel Events & Broadcasting** yang terintegrasi dengan **Pusher**.
 
-## Code of Conduct
+### Event Broadcast & Channel Matrix
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+| Event Name | Channel Name | Trigger Action | Penerima |
+| :--- | :--- | :--- | :--- |
+| `order.status.updated` | `private-user.{userId}` & `private-shop.{shopId}` | Perubahan status pesanan | Buyer & Seller |
+| `order.new` | `private-shop.{shopId}` | Pesanan baru berhasil di-checkout | Seller / Warung |
+| `driver.job.new` | `driver.jobs` (Public Channel) | Status pesanan diubah ke `on_delivery` | Semua Driver |
 
-## Security Vulnerabilities
+### Struktur Payload JSON Broadcast
+* **`OrderStatusUpdated`** (`order.status.updated`):
+  ```json
+  {
+    "order_id": 12,
+    "status": "confirmed",
+    "status_label": "Dikonfirmasi",
+    "updated_at": "2026-08-16T15:00:00.000000Z"
+  }
+  ```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+---
 
-## License
+## 🌐 Daftar REST API Endpoints
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+Seluruh API terproteksi menggunakan token Sanctum Header: `Authorization: Bearer <TOKEN>`.
+
+### 1. Autentikasi (`/api/auth`)
+* `POST /api/auth/register` — Registrasi akun baru (Buyer, Seller, atau Driver).
+* `POST /api/auth/login` — Authenticate & dapatkan Bearer Token.
+* `GET /api/auth/me` — Ambil profil akun aktif.
+* `POST /api/auth/logout` — Revoke token aktif.
+
+### 2. Realtime & Channel Info (`/api/realtime`)
+* `GET /api/realtime/channels` — Mengambil daftar channel Pusher yang dapat di-subscribe oleh pengguna aktif beserta Pusher App Key.
+
+### 3. Toko & Produk Publik (`/api/shops`)
+* `GET /api/shops` — Daftar warung buka.
+* `GET /api/shops/{id}` — Detail warung dan menu.
+
+### 4. Buyer Endpoints (`/api/buyer`) `[role:buyer]`
+* `GET /api/buyer/orders` — Daftar pesanan pembeli.
+* `POST /api/buyer/orders` — Buat pesanan baru.
+* `GET /api/buyer/orders/{id}` — Detail status pesanan.
+* `POST /api/buyer/orders/{id}/payment-proof` — Unggah foto bukti transfer.
+
+### 5. Seller Endpoints (`/api/seller`) `[role:seller]`
+* `GET /api/seller/orders` — Daftar pesanan masuk ke toko seller.
+* `PATCH /api/seller/orders/{id}/status` — Update status pesanan (`confirmed`, `processing`, `on_delivery`, `cancelled`).
+* `GET /api/seller/products` — Kelola menu toko.
+* `PATCH /api/seller/products/{id}/toggle` — Ubah status ketersediaan menu (Ready / Habis).
+
+### 6. Driver Endpoints (`/api/driver`) `[role:driver]`
+* `GET /api/driver/jobs` — Daftar pesanan siap diantar.
+* `PATCH /api/driver/orders/{id}/status` — Menerima pekerjaan (`on_delivery`) atau menyelesaikan pengiriman (`delivered`).
+
+---
+
+## 🌐 Penanganan Ngrok & Local Tunneling
+
+Backend telah dilengkapi dengan **`App\Http\Middleware\HandleNgrok`** dan konfigurasi **TrustProxies** untuk menangani isu-isu berikut saat ditunneling melalui Ngrok:
+
+1. **Host Header & SSL/HTTPS Mismatch**: Memaksa Laravel mengenali skema `https://` yang diberikan Ngrok Forwarding.
+2. **CORS (Cross-Origin Resource Sharing)**: Konfigurasi `config/cors.php` mengizinkan origin dari domain `*.ngrok-free.app` dan `*.ngrok.io`.
+3. **Ngrok Warning Page (Interstitial)**: Otomatis menginject header `ngrok-skip-browser-warning` agar tidak memblokir request API/Broadcasting.
+
+---
+
+## 🚀 Panduan Instalasi & Jalankan
+
+### 1. Clone & Install Dependencies
+```bash
+composer install
+npm install
+```
+
+### 2. Konfigurasi Lingkungan (`.env`)
+Salin file `.env.example` ke `.env` dan pastikan kredensial berikut disesuaikan:
+
+```env
+APP_URL=http://localhost:8000
+# Jika menggunakan Ngrok, ubah APP_URL:
+# APP_URL=https://xxxx.ngrok-free.app
+
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=jajanku
+DB_USERNAME=root
+DB_PASSWORD=
+
+# Broadcasting via Pusher
+BROADCAST_CONNECTION=pusher
+QUEUE_CONNECTION=database
+
+PUSHER_APP_ID=your-app-id
+PUSHER_APP_KEY=your-app-key
+PUSHER_APP_SECRET=your-app-secret
+PUSHER_APP_CLUSTER=ap1
+```
+
+### 3. Migrasi & Seeder Database
+```bash
+php artisan key:generate
+php artisan migrate --seed
+```
+
+### 4. Jalankan Server Dev & Queue Worker
+Untuk memastikan event broadcast berjalan dengan lancar, jalankan server bersama queue listener:
+
+```bash
+# Jalankan concurrently (Server + Queue + Vite)
+composer run dev
+
+# ATAU jalankan secara terpisah:
+php artisan serve
+php artisan queue:listen
+```
