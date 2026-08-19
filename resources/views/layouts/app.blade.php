@@ -361,11 +361,19 @@
 
             // Jika user sedang di halaman detail pesanan yang sama → update UI
             const isDetailPage = document.body.dataset.orderId == data.order_id;
-            if (isDetailPage) {
-                updateOrderDetailStatus(data);
+            if (isDetailPage && typeof window.updateOrderDetailStatus === 'function') {
+                window.updateOrderDetailStatus(data);
             }
 
             showToast(`🔔 Pesanan #${data.order_id}: ${data.status_label}`, 'success');
+        });
+
+        window.userChannel.bind('driver.location.updated', function(data) {
+            console.log('[Pusher] driver.location.updated', data);
+            const isDetailPage = document.body.dataset.orderId == data.orderId;
+            if (isDetailPage && typeof window.updateDriverLocation === 'function') {
+                window.updateDriverLocation(data.latitude, data.longitude);
+            }
         });
 
     @elseif($role === 'seller')

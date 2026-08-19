@@ -18,12 +18,20 @@ class Order extends Model
         'total_price',
         'delivery_fee',
         'delivery_address',
+        'latitude',
+        'longitude',
+        'driver_latitude',
+        'driver_longitude',
         'notes',
     ];
 
     protected $casts = [
-        'total_price'  => 'decimal:2',
-        'delivery_fee' => 'decimal:2',
+        'total_price'      => 'decimal:2',
+        'delivery_fee'     => 'decimal:2',
+        'latitude'         => 'float',
+        'longitude'        => 'float',
+        'driver_latitude'  => 'float',
+        'driver_longitude' => 'float',
     ];
 
     // Status constants

@@ -87,6 +87,7 @@ Route::middleware(['auth', 'role:driver'])->prefix('driver')->name('driver.')->g
     Route::get('/delivery/{id}',              [DeliveryController::class, 'delivery'])->name('delivery');
     Route::post('/delivery/{id}/pickup',      [DeliveryController::class, 'confirmPickup'])->name('delivery.pickup');
     Route::post('/delivery/{id}/delivered',   [DeliveryController::class, 'confirmDelivered'])->name('delivery.delivered');
+    Route::post('/delivery/{id}/location',    [DeliveryController::class, 'updateLocation'])->name('delivery.location');
     Route::get('/history',                    [DeliveryController::class, 'history'])->name('history');
 });
 

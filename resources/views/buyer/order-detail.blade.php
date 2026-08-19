@@ -1,10 +1,29 @@
 @extends('layouts.app')
 @section('title', 'Detail Pesanan #' . $order->id)
 @php
-    // Untuk Pusher JS: tandai halaman ini agar global listener tahu order ID mana yang sedang dibuka
     $currentOrderId = $order->id;
     $statusOrder = ['pending', 'confirmed', 'processing', 'on_delivery', 'delivered'];
+
+    // Coordinates fallback
+    $shopLat   = $order->shop->latitude ?? -6.200000;
+    $shopLng   = $order->shop->longitude ?? 106.816666;
+    $buyerLat  = $order->latitude ?? -6.205000;
+    $buyerLng  = $order->longitude ?? 106.820000;
+    $driverLat = $order->driver_latitude ?? $shopLat;
+    $driverLng = $order->driver_longitude ?? $shopLng;
 @endphp
+
+@push('styles')
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+    #tracking-map {
+        height: 240px;
+        width: 100%;
+        border-radius: 16px;
+        z-index: 1;
+    }
+</style>
+@endpush
 
 @section('content')
 <div class="p-3">
@@ -19,7 +38,6 @@
     <div class="card border-0 mb-3 p-3" style="border-radius:16px; box-shadow:0 2px 8px rgba(0,0,0,.06);">
         <h6 class="fw-700 mb-3" style="color:#1F2937;">📦 Status Pesanan</h6>
 
-        {{-- Badge status: ID untuk diupdate oleh Pusher JS --}}
         <span id="realtime-status-badge"
               class="badge badge-status badge-{{ $order->status_badge }} mb-3"
               style="font-size:.8rem;">
@@ -59,6 +77,22 @@
         <div style="width:2px;height:16px;background:#E5E7EB;margin-left:5px;"></div>
         @endif
         @endforeach
+    </div>
+
+    <!-- Live Map Tracking Card -->
+    <div class="card border-0 mb-3 p-3" style="border-radius:16px; box-shadow:0 2px 8px rgba(0,0,0,.06);" id="map-card">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="fw-700 mb-0" style="color:#1F2937;">🗺️ Live Map Tracking</h6>
+            <span class="badge bg-success small px-2 py-1" style="font-size:.68rem;">
+                <i class="bi bi-broadcast me-1"></i>Realtime
+            </span>
+        </div>
+        <div id="tracking-map" class="shadow-sm border mb-2"></div>
+        <div class="d-flex justify-content-around text-center small text-muted pt-1" style="font-size:.73rem;">
+            <span>🏪 Warung</span>
+            <span>🛵 Driver</span>
+            <span>🏠 Tujuan</span>
+        </div>
     </div>
 
     <!-- Order Items -->
@@ -132,9 +166,63 @@
 @endsection
 
 @push('scripts')
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-// Tandai body agar listener global tahu order mana yang sedang dibuka
 document.body.dataset.orderId = {{ $currentOrderId }};
+
+const shopCoords   = [{{ $shopLat }}, {{ $shopLng }}];
+const buyerCoords  = [{{ $buyerLat }}, {{ $buyerLng }}];
+let driverCoords = [{{ $driverLat }}, {{ $driverLng }}];
+
+let trackingMap, shopMarker, buyerMarker, driverMarker, routePolyline;
+
+function initTrackingMap() {
+    trackingMap = L.map('tracking-map').setView(driverCoords, 14);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '© OpenStreetMap'
+    }).addTo(trackingMap);
+
+    // Custom Icon helper
+    const createIcon = (emoji, bg) => L.divIcon({
+        html: `<div style="background:${bg};color:white;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 3px 8px rgba(0,0,0,.3);border:2px solid white;">${emoji}</div>`,
+        className: '',
+        iconSize: [34, 34],
+        iconAnchor: [17, 17]
+    });
+
+    shopMarker  = L.marker(shopCoords, { icon: createIcon('🏪', '#10B981') }).addTo(trackingMap).bindPopup('<b>Warung Bu Ipa</b>');
+    buyerMarker = L.marker(buyerCoords, { icon: createIcon('🏠', '#EF4444') }).addTo(trackingMap).bindPopup('<b>Tujuan Pembeli</b>');
+    driverMarker = L.marker(driverCoords, { icon: createIcon('🛵', '#FF6B35') }).addTo(trackingMap).bindPopup('<b>Driver</b>');
+
+    updateRouteLine();
+}
+
+function updateRouteLine() {
+    if (routePolyline) trackingMap.removeLayer(routePolyline);
+    routePolyline = L.polyline([shopCoords, driverCoords.length ? driverCoords : shopCoords, buyerCoords], {
+        color: '#FF6B35',
+        weight: 4,
+        opacity: 0.7,
+        dashArray: '8, 8'
+    }).addTo(trackingMap);
+
+    const bounds = L.latLngBounds([shopCoords, buyerCoords, driverCoords]);
+    trackingMap.fitBounds(bounds, { padding: [30, 30] });
+}
+
+window.updateDriverLocation = function(lat, lng) {
+    driverCoords = [lat, lng];
+    if (driverMarker) {
+        driverMarker.setLatLng(driverCoords);
+        updateRouteLine();
+    }
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+    initTrackingMap();
+});
 
 // Status badge class mapping
 const statusBadgeMap = {
@@ -148,21 +236,17 @@ const statusBadgeMap = {
 
 const statusOrder = @json($statusOrder);
 
-// Dipanggil oleh global Pusher listener di layout
 window.updateOrderDetailStatus = function(data) {
     const newStatus = data.status;
     const newIdx    = statusOrder.indexOf(newStatus);
 
-    // 1. Update badge teks & warna
     const badge = document.getElementById('realtime-status-badge');
     if (badge) {
-        // Hapus semua class badge
         Object.values(statusBadgeMap).forEach(c => badge.classList.remove(c));
         badge.classList.add(statusBadgeMap[newStatus] || 'badge-secondary');
         badge.textContent = data.status_label;
     }
 
-    // 2. Update timeline dots
     statusOrder.forEach((key, idx) => {
         const dot   = document.getElementById(`dot-${key}`);
         const label = document.getElementById(`step-label-${key}`);

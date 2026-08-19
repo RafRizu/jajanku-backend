@@ -98,6 +98,33 @@ class DeliveryController extends Controller
     }
 
     /**
+     * Update driver real-time location.
+     */
+    public function updateLocation(Request $request, int $orderId): \Illuminate\Http\JsonResponse
+    {
+        $request->validate([
+            'latitude'  => ['required', 'numeric'],
+            'longitude' => ['required', 'numeric'],
+        ]);
+
+        $order = Order::where('driver_id', Auth::id())
+            ->where('status', 'on_delivery')
+            ->findOrFail($orderId);
+
+        $lat = (float) $request->latitude;
+        $lng = (float) $request->longitude;
+
+        $order->update([
+            'driver_latitude'  => $lat,
+            'driver_longitude' => $lng,
+        ]);
+
+        broadcast(new \App\Events\DriverLocationUpdated($order, $lat, $lng));
+
+        return response()->json(['success' => true]);
+    }
+
+    /**
      * Driver's delivery history.
      */
     public function history(): View

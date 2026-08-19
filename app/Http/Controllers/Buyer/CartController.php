@@ -102,6 +102,8 @@ class CartController extends Controller
         $request->validate([
             'delivery_type'    => ['required', 'in:delivery,pickup'],
             'delivery_address' => ['nullable', 'required_if:delivery_type,delivery', 'string', 'max:500'],
+            'latitude'         => ['nullable', 'numeric'],
+            'longitude'        => ['nullable', 'numeric'],
             'payment_method'   => ['required', 'in:transfer,cash,qris'],
             'notes'            => ['nullable', 'string', 'max:255'],
         ]);
@@ -110,6 +112,8 @@ class CartController extends Controller
             $data = $request->only([
                 'delivery_type',
                 'delivery_address',
+                'latitude',
+                'longitude',
                 'payment_method',
                 'notes',
                 'delivery_fee',

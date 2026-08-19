@@ -131,6 +131,8 @@ class OrderService
                 'total_price'      => $total,
                 'delivery_fee'     => $checkoutData['delivery_fee'] ?? 0,
                 'delivery_address' => $checkoutData['delivery_address'] ?? null,
+                'latitude'         => $checkoutData['latitude'] ?? null,
+                'longitude'        => $checkoutData['longitude'] ?? null,
                 'notes'            => $checkoutData['notes'] ?? null,
             ]);
 
