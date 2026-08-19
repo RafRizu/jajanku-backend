@@ -2,24 +2,33 @@
 @section('title', isset($product) ? 'Edit Menu' : 'Tambah Menu')
 
 @section('content')
-<div class="p-3">
-    <div class="d-flex align-items-center gap-2 mb-3">
-        <a href="{{ route('seller.products') }}" class="btn p-1" style="color:#374151;">
-            <i class="bi bi-arrow-left" style="font-size:1.2rem;"></i>
+{{-- ── Header ──────────────────────────────────────────────────── --}}
+<div style="background:linear-gradient(135deg,#FF6B35,#FF8C42); padding:20px 16px 44px; position:relative; overflow:hidden;">
+    <div style="position:absolute;top:-30px;right:-30px;width:110px;height:110px;
+                background:rgba(255,255,255,.08);border-radius:50%;"></div>
+    <div class="d-flex align-items-center gap-2">
+        <a href="{{ route('seller.products') }}" class="btn p-0 text-white me-2">
+            <i class="bi bi-arrow-left" style="font-size:1.4rem;"></i>
         </a>
-        <h2 class="fw-700 mb-0" style="font-size:1rem; color:#1F2937;">
-            {{ isset($product) ? 'Edit Menu' : 'Tambah Menu Baru' }}
-        </h2>
+        <div>
+            <h1 class="text-white fw-800 mb-0" style="font-size:1.2rem;">
+                {{ isset($product) ? '✏️ Edit Menu' : '➕ Tambah Menu Baru' }}
+            </h1>
+            <p class="mb-0 small" style="color:rgba(255,255,255,.75);">Isi nama, harga, dan kategori menu makanan/minuman</p>
+        </div>
     </div>
+</div>
 
+<div style="margin-top:-20px;padding:0 14px;">
     <form method="POST"
           action="{{ isset($product) ? route('seller.products.update', $product) : route('seller.products.store') }}"
           enctype="multipart/form-data">
         @csrf
         @if(isset($product)) @method('PUT') @endif
 
-        <!-- Image Upload -->
-        <div class="card border-0 mb-3 p-3 text-center" style="border-radius:16px; box-shadow:0 2px 8px rgba(0,0,0,.06);">
+        <!-- Foto Menu -->
+        <div class="card border-0 mb-3 p-3 text-center" style="border-radius:16px; box-shadow:0 3px 12px rgba(0,0,0,.07);">
+            <p class="fw-700 small mb-2 text-start" style="color:#1F2937;">📷 Foto Menu (Boleh Dikosongkan)</p>
             <div id="image-preview-wrap">
                 @if(isset($product) && $product->image)
                     <img src="{{ Storage::url($product->image) }}" id="product-preview"
@@ -27,50 +36,30 @@
                 @else
                     <div id="image-placeholder" class="mx-auto mb-2 rounded-4 d-flex align-items-center justify-content-center"
                          style="width:100px;height:100px;background:linear-gradient(135deg,#FFE0CC,#FFD4B5);font-size:2.5rem;">
-                        🍽️
+                        🍢
                     </div>
                 @endif
             </div>
-            <label class="btn btn-sm rounded-pill px-3" style="border:1.5px solid #FF6B35;color:#FF6B35;" for="product-img">
-                <i class="bi bi-camera me-1"></i>Pilih Foto Menu
+            <label class="btn btn-sm rounded-pill px-4 py-2 mx-auto" style="border:1.5px solid #FF6B35;color:#FF6B35;font-weight:600;" for="product-img">
+                <i class="bi bi-camera me-1"></i>Pilih Gambar Foto
             </label>
             <input type="file" name="image" id="product-img" class="d-none" accept="image/*">
         </div>
 
-        <div class="card border-0 mb-3 p-3" style="border-radius:16px; box-shadow:0 2px 8px rgba(0,0,0,.06);">
+        <div class="card border-0 mb-3 p-3" style="border-radius:16px; box-shadow:0 3px 12px rgba(0,0,0,.07);">
             <div class="mb-3">
-                <label class="form-label fw-600 small text-secondary">Nama Menu *</label>
-                <input type="text" name="name" class="form-control @error('name') is-invalid @enderror"
+                <label class="form-label fw-700 small text-dark">Nama Jajanan / Menu *</label>
+                <input type="text" name="name" class="form-control form-control-lg @error('name') is-invalid @enderror"
+                       style="border-radius:12px;font-size:.95rem;"
                        value="{{ old('name', $product->name ?? '') }}"
-                       placeholder="Mis. Nasi Goreng Spesial" required>
+                       placeholder="Contoh: Cireng Ayam Suwir, Es Teh Tarik" required>
                 @error('name')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
 
             <div class="mb-3">
-                <label class="form-label fw-600 small text-secondary">Deskripsi</label>
-                <textarea name="description" class="form-control" rows="2"
-                          placeholder="Ceritakan tentang menu ini...">{{ old('description', $product->description ?? '') }}</textarea>
-            </div>
-
-            <div class="row g-2 mb-3">
-                <div class="col-6">
-                    <label class="form-label fw-600 small text-secondary">Harga (Rp) *</label>
-                    <input type="number" name="price" class="form-control @error('price') is-invalid @enderror"
-                           value="{{ old('price', $product->price ?? '') }}"
-                           placeholder="15000" min="0" required>
-                    @error('price')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                </div>
-                <div class="col-6">
-                    <label class="form-label fw-600 small text-secondary">Stok</label>
-                    <input type="number" name="stock" class="form-control"
-                           value="{{ old('stock', $product->stock ?? 0) }}"
-                           placeholder="0" min="0">
-                </div>
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label fw-600 small text-secondary">Kategori *</label>
-                <select name="category_id" class="form-select @error('category_id') is-invalid @enderror" required>
+                <label class="form-label fw-700 small text-dark">Kategori *</label>
+                <select name="category_id" class="form-select form-select-lg @error('category_id') is-invalid @enderror"
+                        style="border-radius:12px;font-size:.95rem;" required>
                     <option value="">-- Pilih Kategori --</option>
                     @foreach($categories as $cat)
                     <option value="{{ $cat->id }}"
@@ -81,10 +70,34 @@
                 </select>
                 @error('category_id')<div class="invalid-feedback">{{ $message }}</div>@enderror
             </div>
+
+            <div class="row g-2 mb-3">
+                <div class="col-6">
+                    <label class="form-label fw-700 small text-dark">Harga (Rupiah) *</label>
+                    <input type="number" name="price" class="form-control form-control-lg @error('price') is-invalid @enderror"
+                           style="border-radius:12px;font-size:.95rem;"
+                           value="{{ old('price', $product->price ?? '') }}"
+                           placeholder="1000" min="0" required>
+                    @error('price')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+                <div class="col-6">
+                    <label class="form-label fw-700 small text-dark">Jumlah Stok</label>
+                    <input type="number" name="stock" class="form-control form-control-lg"
+                           style="border-radius:12px;font-size:.95rem;"
+                           value="{{ old('stock', $product->stock ?? 50) }}"
+                           placeholder="50" min="0">
+                </div>
+            </div>
+
+            <div class="mb-2">
+                <label class="form-label fw-700 small text-dark">Keterangan / Catatan Singkat</label>
+                <textarea name="description" class="form-control" rows="2" style="border-radius:12px;"
+                          placeholder="Contoh: Gurih, pedas manis, porsi kenyang...">{{ old('description', $product->description ?? '') }}</textarea>
+            </div>
         </div>
 
-        <button type="submit" class="btn btn-primary-custom w-100 py-3 fw-700">
-            <i class="bi bi-check2-all me-2"></i>{{ isset($product) ? 'Simpan Perubahan' : 'Tambahkan Menu' }}
+        <button type="submit" class="btn btn-primary-custom w-100 py-3 fw-700 mb-3" style="font-size:1.05rem;border-radius:14px;">
+            💾 {{ isset($product) ? 'SIMPAN PERUBAHAN' : 'SIMPAN MENU BARU' }}
         </button>
     </form>
 </div>

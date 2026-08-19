@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Jajanku') — Food Delivery Kampus</title>
-    <meta name="description" content="Pesan makanan dari warung favorit di sekitar kampus kamu">
+    <title>@yield('title', 'JajanKu') - Jajanan SD Favoritmu</title>
+    <meta name="description" content="Temukan jajanan SD mu disini! Gorengan, bundling porsi, dan minuman segar dari Warung Bu Ipa">
 
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -62,7 +62,7 @@
             background: white;
             border-top: 1px solid #EAEAEA;
             display: flex;
-            z-index: 200;
+            z-index: 1050;
             box-shadow: 0 -4px 16px rgba(0,0,0,.08);
         }
         .bottom-nav a {
@@ -203,7 +203,7 @@
     <!-- Navbar -->
     <nav class="app-navbar d-flex align-items-center justify-content-between">
         <a href="{{ route('dashboard') }}" class="brand text-decoration-none text-white">
-            🍱 Jajan<span>ku</span>
+            🏪 Jajan<span>Ku</span>
         </a>
         <div class="d-flex align-items-center gap-3">
             @auth
@@ -299,7 +299,7 @@
     window.pusher = new Pusher('{{ config('broadcasting.connections.pusher.key') }}', {
         cluster:         '{{ config('broadcasting.connections.pusher.options.cluster') }}',
         forceTLS:        true,
-        // Endpoint autentikasi private channel — gunakan CSRF token agar tidak ditolak
+        // Endpoint autentikasi private channel: gunakan CSRF token agar tidak ditolak
         authEndpoint:    '{{ url('/broadcasting/auth') }}',
         auth: {
             headers: {

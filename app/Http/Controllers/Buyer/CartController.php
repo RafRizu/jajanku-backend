@@ -30,19 +30,26 @@ class CartController extends Controller
             'quantity'   => ['integer', 'min:1'],
         ]);
 
-        $cart = $this->orderService->addToCart(
-            (int) $request->product_id,
-            (int) $request->get('quantity', 1)
-        );
+        try {
+            $cart = $this->orderService->addToCart(
+                (int) $request->product_id,
+                (int) $request->get('quantity', 1)
+            );
 
-        $cartData = $this->orderService->getCart();
+            $cartData = $this->orderService->getCart();
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Item berhasil ditambahkan ke keranjang!',
-            'count'   => $cartData['count'],
-            'total'   => $cartData['total'],
-        ]);
+            return response()->json([
+                'success' => true,
+                'message' => 'Item berhasil ditambahkan ke keranjang!',
+                'count'   => $cartData['count'],
+                'total'   => $cartData['total'],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 400);
+        }
     }
 
     public function remove(int $productId): RedirectResponse
@@ -58,18 +65,25 @@ class CartController extends Controller
             'quantity'   => ['required', 'integer', 'min:0'],
         ]);
 
-        $cart = $this->orderService->updateCartItem(
-            (int) $request->product_id,
-            (int) $request->quantity
-        );
+        try {
+            $cart = $this->orderService->updateCartItem(
+                (int) $request->product_id,
+                (int) $request->quantity
+            );
 
-        $cartData = $this->orderService->getCart();
+            $cartData = $this->orderService->getCart();
 
-        return response()->json([
-            'success' => true,
-            'count'   => $cartData['count'],
-            'total'   => $cartData['total'],
-        ]);
+            return response()->json([
+                'success' => true,
+                'count'   => $cartData['count'],
+                'total'   => $cartData['total'],
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 400);
+        }
     }
 
     public function checkout(): View
@@ -87,24 +101,31 @@ class CartController extends Controller
     {
         $request->validate([
             'delivery_type'    => ['required', 'in:delivery,pickup'],
-            'delivery_address' => ['required_if:delivery_type,delivery', 'string', 'max:500'],
+            'delivery_address' => ['nullable', 'required_if:delivery_type,delivery', 'string', 'max:500'],
             'payment_method'   => ['required', 'in:transfer,cash,qris'],
             'notes'            => ['nullable', 'string', 'max:255'],
         ]);
 
         try {
-            $order = $this->orderService->checkout(Auth::id(), $request->only([
+            $data = $request->only([
                 'delivery_type',
                 'delivery_address',
                 'payment_method',
                 'notes',
                 'delivery_fee',
-            ]));
+            ]);
+
+            if ($data['delivery_type'] === 'pickup') {
+                $data['delivery_address'] = 'Ambil Sendiri di Warung';
+                $data['delivery_fee'] = 0;
+            }
+
+            $order = $this->orderService->checkout(Auth::id(), $data);
 
             return redirect()->route('buyer.order.detail', $order->id)
                 ->with('success', 'Pesanan berhasil dibuat! Silakan selesaikan pembayaran.');
         } catch (\Exception $e) {
-            return back()->with('error', $e->getMessage());
+            return back()->with('error', $e->getMessage())->withInput();
         }
     }
 

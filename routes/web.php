@@ -67,6 +67,7 @@ Route::middleware(['auth', 'role:seller'])->prefix('seller')->name('seller.')->g
     Route::post('/shop',                      [SellerDashboard::class, 'updateShop'])->name('shop.update');
     Route::get('/orders',                     [SellerDashboard::class, 'orders'])->name('orders');
     Route::post('/orders/{id}/process',       [SellerDashboard::class, 'processOrder'])->name('orders.process');
+    Route::post('/orders/{id}/cancel',        [SellerDashboard::class, 'cancelOrder'])->name('orders.cancel');
     Route::post('/orders/{id}/request-driver', [SellerDashboard::class, 'requestDriver'])->name('orders.driver');
 
     // Products

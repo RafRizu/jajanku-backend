@@ -12,137 +12,168 @@ class ShopSeeder extends Seeder
 {
     public function run(): void
     {
-        $seller = User::where('email', 'seller@jajanku.id')->first();
+        $seller = User::where('email', 'pemilik@jajanku.id')->first();
 
-        // Create categories
+        // ----------------------------------------------------------------
+        // Categories
+        // ----------------------------------------------------------------
         $categories = [
-            ['name' => 'Nasi & Lauk', 'slug' => 'nasi-lauk', 'icon' => '🍚'],
-            ['name' => 'Mie & Bakso', 'slug' => 'mie-bakso', 'icon' => '🍜'],
-            ['name' => 'Minuman',     'slug' => 'minuman',   'icon' => '🥤'],
-            ['name' => 'Snack',       'slug' => 'snack',     'icon' => '🍿'],
-            ['name' => 'Gorengan',    'slug' => 'gorengan',  'icon' => '🧆'],
-            ['name' => 'Dessert',     'slug' => 'dessert',   'icon' => '🍡'],
+            ['name' => 'Gorengan',         'slug' => 'gorengan',         'icon' => '🍢'],
+            ['name' => 'Bundling 1 Porsi', 'slug' => 'bundling-porsi',   'icon' => '🍜'],
+            ['name' => 'Minuman',          'slug' => 'minuman',          'icon' => '🥤'],
         ];
 
         foreach ($categories as $cat) {
             Category::firstOrCreate(['slug' => $cat['slug']], $cat);
         }
 
-        // Create sample shops
-        $shops = [
+        $gorengan = Category::where('slug', 'gorengan')->first();
+        $bundling = Category::where('slug', 'bundling-porsi')->first();
+        $minuman  = Category::where('slug', 'minuman')->first();
+
+        // ----------------------------------------------------------------
+        // Warung Bu Ipa - 1 warung tunggal
+        // ----------------------------------------------------------------
+        $shop = Shop::firstOrCreate(
+            ['user_id' => $seller->id],
             [
                 'user_id'     => $seller->id,
-                'name'        => 'Warung Bu Siti',
-                'description' => 'Masakan rumahan yang lezat dan terjangkau',
-                'address'     => 'Jl. Kampus No. 1, Depan Gedung A',
+                'name'        => 'Warung Bu Ipa',
+                'description' => 'Temukan jajanan SD mu disini! Gorengan, bundling porsi, dan minuman segar.',
+                'address'     => 'Jl. Kampus No. 1, Area Kantin',
                 'latitude'    => -6.9147,
                 'longitude'   => 107.6098,
                 'status'      => 'active',
-            ],
+            ]
+        );
+
+        // ----------------------------------------------------------------
+        // Menu Gorengan
+        // ----------------------------------------------------------------
+        $gorenganMenu = [
+            ['name' => 'Cireng Ayam',        'price' => 1000],
+            ['name' => 'Cireng Ayam Suwir',  'price' => 1000],
+            ['name' => 'Cilok',              'price' => 1000],
+            ['name' => 'Risoles Ayam',       'price' => 1000],
+            ['name' => 'Risol Mayo',         'price' => 1000],
+            ['name' => 'Dimsum Goreng',      'price' => 1000],
+            ['name' => 'Corndog',            'price' => 1000],
+            ['name' => 'Otak-Otak',          'price' => 1000],
+            ['name' => 'Sotong',             'price' => 1000],
+            ['name' => 'Nuget',              'price' => 1000],
+            ['name' => 'Sosis Kecil',        'price' => 1000],
+            ['name' => 'Sosis Besar',        'price' => 3000],
+            ['name' => 'Cikuwa',             'price' => 1000],
+            ['name' => 'Sempol Ayam',        'price' => 1000],
+            ['name' => 'Bakso Besar',        'price' => 2000],
+            ['name' => 'Bakso Kecil',        'price' => 1000],
+            ['name' => 'Dumpling Ayam',      'price' => 1000],
+            ['name' => 'Dumpling Keju',      'price' => 1000],
+            ['name' => 'Cakwe Mini',         'price' => 1000],
+            ['name' => 'Fish Roll',          'price' => 1000],
+            ['name' => 'Tofu',               'price' => 1000],
+            ['name' => 'Wonton',             'price' => 1000],
+            ['name' => 'Bakwan Sayur',       'price' => 1000],
+            ['name' => 'Martabak Mini',      'price' => 1000],
         ];
 
-        foreach ($shops as $shopData) {
-            $shop = Shop::firstOrCreate(
-                ['user_id' => $shopData['user_id']],
-                $shopData
-            );
-
-            // Create products for this shop
-            $this->seedProducts($shop);
-        }
-
-        // Create extra demo shops (different sellers)
-        $this->createDemoShops();
-
-        $this->command->info('Shops and products seeded!');
-    }
-
-    private function seedProducts(Shop $shop): void
-    {
-        $nasiLauk = Category::where('slug', 'nasi-lauk')->first();
-        $minuman  = Category::where('slug', 'minuman')->first();
-        $snack    = Category::where('slug', 'snack')->first();
-
-        $products = [
-            ['name' => 'Nasi Uduk + Lauk', 'price' => 12000, 'category_id' => $nasiLauk->id, 'is_available' => true, 'stock' => 20],
-            ['name' => 'Nasi Goreng Spesial', 'price' => 15000, 'category_id' => $nasiLauk->id, 'is_available' => true, 'stock' => 15],
-            ['name' => 'Ayam Goreng', 'price' => 10000, 'category_id' => $nasiLauk->id, 'is_available' => true, 'stock' => 10],
-            ['name' => 'Es Teh Manis', 'price' => 4000, 'category_id' => $minuman->id, 'is_available' => true, 'stock' => 50],
-            ['name' => 'Es Jeruk', 'price' => 5000, 'category_id' => $minuman->id, 'is_available' => true, 'stock' => 50],
-            ['name' => 'Tempe Goreng (3pcs)', 'price' => 3000, 'category_id' => $snack->id, 'is_available' => true, 'stock' => 30],
-            ['name' => 'Tahu Isi (3pcs)', 'price' => 3500, 'category_id' => $snack->id, 'is_available' => true, 'stock' => 30],
-        ];
-
-        foreach ($products as $productData) {
+        foreach ($gorenganMenu as $item) {
             Product::firstOrCreate(
-                ['shop_id' => $shop->id, 'name' => $productData['name']],
-                array_merge($productData, ['shop_id' => $shop->id])
-            );
-        }
-    }
-
-    private function createDemoShops(): void
-    {
-        // Create additional demo seller users and shops
-        $demoSellers = [
-            [
-                'email' => 'seller2@jajanku.id',
-                'name'  => 'Warung Pak Ahmad',
-                'shop'  => [
-                    'name'        => 'Mie Ayam Pak Ahmad',
-                    'description' => 'Mie ayam dan bakso segar setiap hari',
-                    'address'     => 'Jl. Kampus No. 5, Kantin Belakang',
-                    'latitude'    => -6.9150,
-                    'longitude'   => 107.6110,
-                    'status'      => 'active',
-                ],
-            ],
-            [
-                'email' => 'seller3@jajanku.id',
-                'name'  => 'Kedai Kopi Nusantara',
-                'shop'  => [
-                    'name'        => 'Kedai Kopi Nusantara',
-                    'description' => 'Kopi & minuman kekinian dengan cita rasa lokal',
-                    'address'     => 'Jl. Universitas No. 3, Lobby Utama',
-                    'latitude'    => -6.9140,
-                    'longitude'   => 107.6095,
-                    'status'      => 'active',
-                ],
-            ],
-        ];
-
-        $mie      = Category::where('slug', 'mie-bakso')->first();
-        $minuman  = Category::where('slug', 'minuman')->first();
-
-        foreach ($demoSellers as $sellerData) {
-            $user = User::firstOrCreate(
-                ['email' => $sellerData['email']],
+                ['shop_id' => $shop->id, 'name' => $item['name']],
                 [
-                    'name'     => $sellerData['name'],
-                    'password' => bcrypt('password'),
+                    'shop_id'      => $shop->id,
+                    'category_id'  => $gorengan->id,
+                    'price'        => $item['price'],
+                    'description'  => $item['name'] . ' - jajanan favorit Bu Ipa',
+                    'is_available' => true,
+                    'stock'        => 50,
                 ]
             );
-            $user->syncRoles(['seller']);
-
-            $shop = Shop::firstOrCreate(
-                ['user_id' => $user->id],
-                array_merge($sellerData['shop'], ['user_id' => $user->id])
-            );
-
-            if ($mie && $minuman) {
-                Product::firstOrCreate(
-                    ['shop_id' => $shop->id, 'name' => 'Mie Ayam Original'],
-                    ['shop_id' => $shop->id, 'name' => 'Mie Ayam Original', 'price' => 13000, 'category_id' => $mie->id, 'is_available' => true, 'stock' => 30]
-                );
-                Product::firstOrCreate(
-                    ['shop_id' => $shop->id, 'name' => 'Bakso Campur'],
-                    ['shop_id' => $shop->id, 'name' => 'Bakso Campur', 'price' => 15000, 'category_id' => $mie->id, 'is_available' => true, 'stock' => 20]
-                );
-                Product::firstOrCreate(
-                    ['shop_id' => $shop->id, 'name' => 'Kopi Susu'],
-                    ['shop_id' => $shop->id, 'name' => 'Kopi Susu', 'price' => 8000, 'category_id' => $minuman->id, 'is_available' => true, 'stock' => 50]
-                );
-            }
         }
+
+        // ----------------------------------------------------------------
+        // Menu Bundling 1 Porsi
+        // ----------------------------------------------------------------
+        $bundlingMenu = [
+            ['name' => 'Mie 1 Porsi',              'price' =>  3000],
+            ['name' => 'Spaghetti',                'price' =>  3000],
+            ['name' => 'Seafood Asam Manis',       'price' =>  3000],
+            ['name' => 'Bakso Kuah Pedas',         'price' =>  3000],
+            ['name' => 'Bubur Jagung',             'price' =>  3000],
+            ['name' => 'Seblak',                   'price' =>  3000],
+            ['name' => 'Tomyam',                   'price' =>  3000],
+            ['name' => 'Mie Ayam',                 'price' =>  3000],
+            ['name' => 'Otak-Otak Campur',         'price' =>  5000],
+            ['name' => 'Otak-Otak Campur Jumbo',   'price' => 10000],
+            ['name' => 'Sosis Besar Isi 2',        'price' =>  5000],
+        ];
+
+        foreach ($bundlingMenu as $item) {
+            Product::firstOrCreate(
+                ['shop_id' => $shop->id, 'name' => $item['name']],
+                [
+                    'shop_id'      => $shop->id,
+                    'category_id'  => $bundling->id,
+                    'price'        => $item['price'],
+                    'description'  => $item['name'] . ' - bundling porsi spesial Bu Ipa',
+                    'is_available' => true,
+                    'stock'        => 20,
+                ]
+            );
+        }
+
+        // ----------------------------------------------------------------
+        // Menu Minuman
+        // ----------------------------------------------------------------
+        $minumanMenu = [
+            ['name' => 'Es Teh Manis',          'price' => 1000],
+            ['name' => 'Es Teh Tarik / Bonteh', 'price' => 3000],
+            ['name' => 'Es Bonteh Matcha',      'price' => 3000],
+            ['name' => 'Serbuk Gula Batu',      'price' => 1000],
+            ['name' => 'Serbuk Apel',           'price' => 1000],
+            ['name' => 'Jasjus Anggur',         'price' => 1000],
+            ['name' => 'Jasjus Jambu',          'price' => 1000],
+            ['name' => 'Jasjus Mangga',         'price' => 1000],
+            ['name' => 'Jasjus Jeruk Peras',    'price' => 1000],
+            ['name' => 'Jasjus Melon',          'price' => 1000],
+            ['name' => 'Cappucino',             'price' => 1000],
+            ['name' => 'Pop Ice Stroberi',      'price' => 2000],
+            ['name' => 'Pop Ice Alpukat',       'price' => 2000],
+            ['name' => 'Pop Ice Taro',          'price' => 2000],
+            ['name' => 'Pop Ice Cokelat',       'price' => 2000],
+            ['name' => 'Pop Ice Anggur',        'price' => 2000],
+            ['name' => 'Pop Ice Melon',         'price' => 2000],
+            ['name' => 'Pop Ice Mangga',        'price' => 2000],
+            ['name' => 'Pop Ice Permen Karet',  'price' => 2000],
+            ['name' => 'Pop Ice Durian',        'price' => 2000],
+            ['name' => 'Es Susu Cokelat',       'price' => 2000],
+            ['name' => 'Es Susu Putih',         'price' => 2000],
+            ['name' => 'Good Day',              'price' => 3000],
+            ['name' => 'Nutrisari Jeruk Peras', 'price' => 2000],
+            ['name' => 'Nutrisari Mangga',      'price' => 2000],
+            ['name' => 'Nutrisari Sweet Orange','price' => 2000],
+            ['name' => 'Es Cokelat Beng-Beng', 'price' => 2000],
+            ['name' => 'Air Le Minerale',       'price' => 3000],
+            ['name' => 'Air Aqua Viva',         'price' => 2000],
+            ['name' => 'Cleo Kecil',            'price' => 1000],
+            ['name' => 'Es Lilin',              'price' => 1000],
+        ];
+
+        foreach ($minumanMenu as $item) {
+            Product::firstOrCreate(
+                ['shop_id' => $shop->id, 'name' => $item['name']],
+                [
+                    'shop_id'      => $shop->id,
+                    'category_id'  => $minuman->id,
+                    'price'        => $item['price'],
+                    'description'  => $item['name'] . ' - segar dan nikmat',
+                    'is_available' => true,
+                    'stock'        => 100,
+                ]
+            );
+        }
+
+        $total = count($gorenganMenu) + count($bundlingMenu) + count($minumanMenu);
+        $this->command->info("✅ Warung Bu Ipa + {$total} produk berhasil di-seed!");
     }
 }

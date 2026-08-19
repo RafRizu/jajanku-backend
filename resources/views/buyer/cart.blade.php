@@ -2,10 +2,17 @@
 @section('title', 'Keranjang')
 
 @section('content')
-<div class="p-3">
-    <h2 class="fw-700 mb-3" style="font-size:1.1rem; color:#1F2937;">
-        <i class="bi bi-bag-fill me-2" style="color:#FF6B35;"></i>Keranjangku
-    </h2>
+{{-- ── Header ──────────────────────────────────────────────────── --}}
+<div style="background:linear-gradient(135deg,#FF6B35,#FF8C42); padding:20px 16px 44px; position:relative; overflow:hidden;">
+    <div style="position:absolute;top:-30px;right:-30px;width:110px;height:110px;
+                background:rgba(255,255,255,.08);border-radius:50%;"></div>
+    <h1 class="text-white fw-800 mb-0" style="font-size:1.2rem;">
+        <i class="bi bi-bag-fill me-2" style="opacity:.9;"></i>Keranjangku
+    </h1>
+    <p class="mb-0 mt-1 small" style="color:rgba(255,255,255,.75);">Item yang akan kamu pesan</p>
+</div>
+
+<div style="margin-top:-20px;padding:0 14px;">
 
     @if(empty($items))
     <div class="text-center py-5">
@@ -105,6 +112,8 @@ document.querySelectorAll('.qty-btn').forEach(btn => {
                 // Update total display
                 document.getElementById('cart-total').textContent =
                     'Rp ' + parseInt(data.total).toLocaleString('id-ID');
+            } else if (data.message) {
+                alert(data.message);
             }
         } catch (e) { console.error(e); }
     });

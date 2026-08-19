@@ -15,25 +15,32 @@ use Illuminate\Support\Facades\Session;
 class OrderService
 {
     /**
-     * Add item to session-based cart.
+     * Add item to session-based cart with dynamic stock validation.
      */
     public function addToCart(int $productId, int $quantity = 1): array
     {
         $product = Product::findOrFail($productId);
-        $cart = Session::get('cart', []);
 
-        if (isset($cart[$productId])) {
-            $cart[$productId]['quantity'] += $quantity;
-        } else {
-            $cart[$productId] = [
-                'product_id' => $product->id,
-                'name'       => $product->name,
-                'price'      => $product->price,
-                'image'      => $product->image,
-                'quantity'   => $quantity,
-                'shop_id'    => $product->shop_id,
-            ];
+        if (!$product->is_available || $product->stock <= 0) {
+            throw new \Exception("Maaf, stok {$product->name} sedang habis.");
         }
+
+        $cart = Session::get('cart', []);
+        $currentQty = isset($cart[$productId]) ? $cart[$productId]['quantity'] : 0;
+        $newQty = $currentQty + $quantity;
+
+        if ($newQty > $product->stock) {
+            throw new \Exception("Stok {$product->name} tidak mencukupi. Sisa stok: {$product->stock}");
+        }
+
+        $cart[$productId] = [
+            'product_id' => $product->id,
+            'name'       => $product->name,
+            'price'      => $product->price,
+            'image'      => $product->image,
+            'quantity'   => $newQty,
+            'shop_id'    => $product->shop_id,
+        ];
 
         Session::put('cart', $cart);
         return $cart;
@@ -51,7 +58,7 @@ class OrderService
     }
 
     /**
-     * Update item quantity in cart.
+     * Update item quantity in cart with stock validation.
      */
     public function updateCartItem(int $productId, int $quantity): array
     {
@@ -59,6 +66,10 @@ class OrderService
         if ($quantity <= 0) {
             unset($cart[$productId]);
         } else {
+            $product = Product::findOrFail($productId);
+            if ($quantity > $product->stock) {
+                throw new \Exception("Stok {$product->name} tidak mencukupi. Sisa stok: {$product->stock}");
+            }
             $cart[$productId]['quantity'] = $quantity;
         }
         Session::put('cart', $cart);
@@ -89,7 +100,7 @@ class OrderService
     }
 
     /**
-     * Create an order from the current cart.
+     * Create an order from the current cart and deduct product stock dynamically.
      */
     public function checkout(int $buyerId, array $checkoutData): Order
     {
@@ -97,10 +108,18 @@ class OrderService
             $cart = Session::get('cart', []);
 
             if (empty($cart)) {
-                throw new \Exception('Cart is empty.');
+                throw new \Exception('Keranjang Anda kosong.');
             }
 
-            // Determine which shop — all items must be from same shop
+            // Lock and validate stock for all products in cart
+            foreach ($cart as $item) {
+                $product = Product::where('id', $item['product_id'])->lockForUpdate()->first();
+                if (!$product || !$product->is_available || $product->stock < $item['quantity']) {
+                    $available = $product ? $product->stock : 0;
+                    throw new \Exception("Stok untuk {$item['name']} tidak mencukupi (Sisa stok: {$available}). Silakan sesuaikan keranjang Anda.");
+                }
+            }
+
             $shopId = collect($cart)->first()['shop_id'];
             $total  = collect($cart)->sum(fn ($item) => $item['price'] * $item['quantity']);
 
@@ -122,6 +141,16 @@ class OrderService
                     'quantity'   => $item['quantity'],
                     'price'      => $item['price'],
                 ]);
+
+                // Deduct stock dynamically & update availability
+                $product = Product::find($item['product_id']);
+                if ($product) {
+                    $newStock = max(0, $product->stock - $item['quantity']);
+                    $product->update([
+                        'stock'        => $newStock,
+                        'is_available' => $newStock > 0 ? $product->is_available : false,
+                    ]);
+                }
             }
 
             // Create a pending payment record
@@ -165,12 +194,25 @@ class OrderService
 
     /**
      * Update order status (for sellers and drivers).
-     * Broadcasts realtime events to relevant parties.
+     * Restores stock if order is cancelled.
      */
     public function updateStatus(Order $order, string $status): Order
     {
+        $previousStatus = $order->status;
         $order->update(['status' => $status]);
         $order = $order->fresh();
+
+        // Restore stock if cancelled
+        if ($status === Order::STATUS_CANCELLED && $previousStatus !== Order::STATUS_CANCELLED) {
+            foreach ($order->items as $item) {
+                if ($item->product) {
+                    $item->product->increment('stock', $item->quantity);
+                    if ($item->product->stock > 0) {
+                        $item->product->update(['is_available' => true]);
+                    }
+                }
+            }
+        }
 
         // Broadcast ke buyer & seller: status berubah
         broadcast(new OrderStatusUpdated($order));

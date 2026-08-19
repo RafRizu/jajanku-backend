@@ -18,7 +18,7 @@ class NewDriverJobAvailable implements ShouldBroadcast
     ) {}
 
     /**
-     * Broadcast ke channel publik driver — semua driver bisa mendengarkan.
+     * Broadcast ke channel publik driver: semua driver bisa mendengarkan.
      */
     public function broadcastOn(): array
     {

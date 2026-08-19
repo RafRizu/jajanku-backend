@@ -6,11 +6,11 @@
 
     <!-- Logo Area -->
     <div class="text-center mb-4">
-        <div style="font-size: 3.5rem; line-height: 1;">🍱</div>
+        <div style="font-size: 3.5rem; line-height: 1;">🏪</div>
         <h1 style="font-weight:800; font-size:1.8rem; color:#2D3748; letter-spacing:-.5px;" class="mt-2">
-            Jajan<span style="color:#FF6B35;">ku</span>
+           Jajan<span style="color:#FF6B35;">Ku</span>
         </h1>
-        <p class="text-muted small">Pesan makanan kampus favoritmu!</p>
+        <p class="text-muted small">Temukan jajanan SD mu disini! 🍢</p>
     </div>
 
     <div class="card border-0 w-100" style="border-radius:20px; box-shadow:0 8px 32px rgba(0,0,0,.12); max-width:400px;">
@@ -26,7 +26,7 @@
                     <input type="email" name="email" id="email"
                            class="form-control @error('email') is-invalid @enderror"
                            value="{{ old('email') }}"
-                           placeholder="kamu@kampus.ac.id" required autofocus>
+                           placeholder="kamu@jajanku.id" required autofocus>
                     @error('email')
                         <div class="invalid-feedback">{{ $message }}</div>
                     @enderror
@@ -55,32 +55,32 @@
                 </button>
             </form>
 
-            <!-- Demo Credentials -->
-            <div class="mt-4 p-3 rounded-3" style="background:#FFF7F5;">
-                <p class="small fw-600 mb-2" style="color:#FF6B35;">🧪 Demo Akun:</p>
-                <div class="d-flex flex-column gap-1">
-                    <button class="btn btn-sm text-start py-1 px-2 rounded-2 demo-fill"
-                            style="background:#FFF;border:1px solid #FFD4B5;font-size:.75rem;"
-                            data-email="buyer@jajanku.id" data-pass="password">
-                        🛒 Pembeli — buyer@jajanku.id
+            {{-- Demo Credentials --}}
+            <div class="mt-4 p-3 rounded-3" style="background:#FFF7F5;border:1px solid #FFE8D6;">
+                <p class="small fw-700 mb-2" style="color:#FF6B35;">🧪 Akun Demo (klik untuk isi otomatis):</p>
+                <div class="d-flex flex-column gap-2">
+                    <button class="btn btn-sm text-start py-2 px-3 rounded-3 demo-fill"
+                            style="background:#FFF;border:1.5px solid #FFD4B5;font-size:.75rem;"
+                            data-email="pembeli@jajanku.id" data-pass="password">
+                        🛒 <strong>Pembeli</strong>: pembeli@jajanku.id
                     </button>
-                    <button class="btn btn-sm text-start py-1 px-2 rounded-2 demo-fill"
-                            style="background:#FFF;border:1px solid #FFD4B5;font-size:.75rem;"
-                            data-email="seller@jajanku.id" data-pass="password">
-                        🏪 Penjual — seller@jajanku.id
+                    <button class="btn btn-sm text-start py-2 px-3 rounded-3 demo-fill"
+                            style="background:#FFF;border:1.5px solid #FFD4B5;font-size:.75rem;"
+                            data-email="pemilik@jajanku.id" data-pass="password">
+                        🏪 <strong>Pemilik Warung</strong>: pemilik@jajanku.id
                     </button>
-                    <button class="btn btn-sm text-start py-1 px-2 rounded-2 demo-fill"
-                            style="background:#FFF;border:1px solid #FFD4B5;font-size:.75rem;"
+                    <button class="btn btn-sm text-start py-2 px-3 rounded-3 demo-fill"
+                            style="background:#FFF;border:1.5px solid #FFD4B5;font-size:.75rem;"
                             data-email="driver@jajanku.id" data-pass="password">
-                        🚴 Driver — driver@jajanku.id
+                        🛵 <strong>Driver</strong>: driver@jajanku.id
                     </button>
-                    <button class="btn btn-sm text-start py-1 px-2 rounded-2 demo-fill"
-                            style="background:#FFF;border:1px solid #FFD4B5;font-size:.75rem;"
+                    <button class="btn btn-sm text-start py-2 px-3 rounded-3 demo-fill"
+                            style="background:#FFF;border:1.5px solid #E5E7EB;font-size:.75rem;"
                             data-email="admin@jajanku.id" data-pass="password">
-                        ⚙️ Admin — admin@jajanku.id
+                        ⚙️ <strong>Admin</strong>: admin@jajanku.id
                     </button>
                 </div>
-                <p class="text-muted mt-1 mb-0" style="font-size:.7rem;">Password semua: <strong>password</strong></p>
+                <p class="text-muted mt-2 mb-0" style="font-size:.7rem;">Password semua: <strong>password</strong></p>
             </div>
         </div>
     </div>

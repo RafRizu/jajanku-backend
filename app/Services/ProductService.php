@@ -31,6 +31,10 @@ class ProductService
             $data['image'] = $image->store('products', 'public');
         }
 
+        if (isset($data['stock'])) {
+            $data['is_available'] = (int)$data['stock'] > 0;
+        }
+
         return Product::create($data);
     }
 
@@ -45,6 +49,10 @@ class ProductService
                 Storage::disk('public')->delete($product->image);
             }
             $data['image'] = $image->store('products', 'public');
+        }
+
+        if (isset($data['stock'])) {
+            $data['is_available'] = (int)$data['stock'] > 0;
         }
 
         $product->update($data);

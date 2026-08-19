@@ -19,7 +19,7 @@
     <div class="card border-0 mb-3 p-3" style="border-radius:16px; box-shadow:0 2px 8px rgba(0,0,0,.06);">
         <h6 class="fw-700 mb-3" style="color:#1F2937;">📦 Status Pesanan</h6>
 
-        {{-- Badge status — ID untuk diupdate oleh Pusher JS --}}
+        {{-- Badge status: ID untuk diupdate oleh Pusher JS --}}
         <span id="realtime-status-badge"
               class="badge badge-status badge-{{ $order->status_badge }} mb-3"
               style="font-size:.8rem;">
@@ -133,7 +133,7 @@
 
 @push('scripts')
 <script>
-// ── Tandai body agar listener global tahu order mana yang sedang dibuka ──
+// Tandai body agar listener global tahu order mana yang sedang dibuka
 document.body.dataset.orderId = {{ $currentOrderId }};
 
 // Status badge class mapping

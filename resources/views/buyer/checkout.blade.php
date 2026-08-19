@@ -2,11 +2,17 @@
 @section('title', 'Checkout')
 
 @section('content')
-<div class="p-3">
-    <h2 class="fw-700 mb-3" style="font-size:1.1rem; color:#1F2937;">
-        <i class="bi bi-credit-card-fill me-2" style="color:#FF6B35;"></i>Checkout
-    </h2>
+{{-- ── Header ──────────────────────────────────────────────────── --}}
+<div style="background:linear-gradient(135deg,#FF6B35,#FF8C42); padding:20px 16px 44px; position:relative; overflow:hidden;">
+    <div style="position:absolute;top:-30px;right:-30px;width:110px;height:110px;
+                background:rgba(255,255,255,.08);border-radius:50%;"></div>
+    <h1 class="text-white fw-800 mb-0" style="font-size:1.2rem;">
+        <i class="bi bi-credit-card-fill me-2" style="opacity:.9;"></i>Checkout
+    </h1>
+    <p class="mb-0 mt-1 small" style="color:rgba(255,255,255,.75);">Konfirmasi pesananmu</p>
+</div>
 
+<div style="margin-top:-20px;padding:0 14px;">
     <form method="POST" action="{{ route('buyer.checkout.process') }}" enctype="multipart/form-data">
         @csrf
 
@@ -17,14 +23,14 @@
                 <label class="delivery-option flex-fill text-center p-3 rounded-3"
                        style="border:2px solid #FF6B35;background:#FFF7F5;cursor:pointer;" for="delivery_delivery">
                     <input type="radio" name="delivery_type" id="delivery_delivery" value="delivery"
-                           class="d-none" checked>
+                           class="d-none" {{ old('delivery_type', 'delivery') === 'delivery' ? 'checked' : '' }}>
                     <div style="font-size:1.5rem;">🛵</div>
                     <div class="small fw-600 mt-1">Antar ke Lokasi</div>
                 </label>
                 <label class="delivery-option flex-fill text-center p-3 rounded-3"
                        style="border:2px solid #E5E7EB;cursor:pointer;" for="delivery_pickup">
                     <input type="radio" name="delivery_type" id="delivery_pickup" value="pickup"
-                           class="d-none">
+                           class="d-none" {{ old('delivery_type') === 'pickup' ? 'checked' : '' }}>
                     <div style="font-size:1.5rem;">🏃</div>
                     <div class="small fw-600 mt-1">Ambil Sendiri</div>
                 </label>
@@ -43,7 +49,7 @@
         <!-- Notes -->
         <div class="card border-0 mb-3 p-3" style="border-radius:16px; box-shadow:0 2px 8px rgba(0,0,0,.06);">
             <h6 class="fw-700 mb-2" style="color:#1F2937;">📝 Catatan (Opsional)</h6>
-            <input type="text" name="notes" class="form-control" placeholder="Contoh: Pedasnya dikurangi ya...">
+            <input type="text" name="notes" class="form-control" placeholder="Contoh: Pedasnya dikurangi ya..." value="{{ old('notes') }}">
         </div>
 
         <!-- Payment Method -->
@@ -54,7 +60,7 @@
                 <label class="payment-option d-flex align-items-center gap-3 p-3 rounded-3"
                        style="border:1.5px solid #E5E7EB;cursor:pointer;transition:all .2s;" for="pay_{{ $val }}">
                     <input type="radio" name="payment_method" id="pay_{{ $val }}" value="{{ $val }}"
-                           class="form-check-input m-0" {{ $val === 'transfer' ? 'checked' : '' }}>
+                           class="form-check-input m-0" {{ old('payment_method', 'transfer') === $val ? 'checked' : '' }}>
                     <span style="font-size:1.3rem;">{{ $info[0] }}</span>
                     <span class="fw-600 small">{{ $info[1] }}</span>
                 </label>
@@ -89,7 +95,7 @@
             </div>
         </div>
 
-        <button type="submit" class="btn btn-primary-custom w-100 py-3 fw-700">
+        <button type="submit" class="btn btn-primary-custom w-100 py-3 fw-700 mb-3">
             <i class="bi bi-bag-check-fill me-2"></i>Buat Pesanan
         </button>
     </form>
@@ -98,29 +104,46 @@
 
 @push('scripts')
 <script>
-    // Delivery type toggle
+    function updateDeliveryState(type) {
+        const isDelivery = type === 'delivery';
+        const addressSection = document.getElementById('address-section');
+        const addressInput = document.getElementById('delivery_address');
+
+        if (addressSection) {
+            addressSection.style.display = isDelivery ? 'block' : 'none';
+        }
+
+        if (addressInput) {
+            addressInput.required = isDelivery;
+        }
+
+        document.querySelectorAll('.delivery-option').forEach(l => {
+            l.style.borderColor = '#E5E7EB';
+            l.style.background  = 'white';
+        });
+
+        const selectedRadio = document.querySelector(`[name="delivery_type"][value="${type}"]`);
+        if (selectedRadio) {
+            const label = selectedRadio.closest('.delivery-option');
+            if (label) {
+                label.style.borderColor = '#FF6B35';
+                label.style.background  = '#FFF7F5';
+            }
+        }
+
+        const fee = isDelivery ? 3000 : 0;
+        const feeDisplay = document.getElementById('delivery-fee-display');
+        const feeInput = document.getElementById('delivery-fee-input');
+        if (feeDisplay) feeDisplay.textContent = 'Rp ' + fee.toLocaleString('id-ID');
+        if (feeInput) feeInput.value = fee;
+    }
+
     document.querySelectorAll('[name="delivery_type"]').forEach(radio => {
         radio.addEventListener('change', function() {
-            const isDelivery = this.value === 'delivery';
-            document.getElementById('address-section').style.display = isDelivery ? 'block' : 'none';
-            document.getElementById('delivery_address').required = isDelivery;
-
-            // Update delivery options styling
-            document.querySelectorAll('.delivery-option').forEach(l => {
-                l.style.borderColor = '#E5E7EB';
-                l.style.background  = 'white';
-            });
-            this.closest('.delivery-option').style.borderColor = '#FF6B35';
-            this.closest('.delivery-option').style.background  = '#FFF7F5';
-
-            // Simulate delivery fee
-            const fee = isDelivery ? 3000 : 0;
-            document.getElementById('delivery-fee-display').textContent = 'Rp ' + fee.toLocaleString('id-ID');
-            document.getElementById('delivery-fee-input').value = fee;
+            updateDeliveryState(this.value);
         });
     });
 
-    // Payment method styling
     document.querySelectorAll('[name="payment_method"]').forEach(radio => {
         radio.addEventListener('change', function() {
             document.querySelectorAll('.payment-option').forEach(l => l.style.borderColor = '#E5E7EB');
@@ -128,8 +151,14 @@
         });
     });
 
-    // Initial state
-    document.querySelector('[name="payment_method"]:checked')?.closest('.payment-option')
-        ?.style.setProperty('border-color', '#FF6B35');
+    document.addEventListener('DOMContentLoaded', function() {
+        const checkedDelivery = document.querySelector('[name="delivery_type"]:checked')?.value || 'delivery';
+        updateDeliveryState(checkedDelivery);
+
+        const checkedPayment = document.querySelector('[name="payment_method"]:checked');
+        if (checkedPayment) {
+            checkedPayment.closest('.payment-option')?.style.setProperty('border-color', '#FF6B35');
+        }
+    });
 </script>
 @endpush

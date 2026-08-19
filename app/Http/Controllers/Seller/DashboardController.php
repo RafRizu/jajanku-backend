@@ -101,6 +101,24 @@ class DashboardController extends Controller
         return back()->with('success', 'Status pesanan berhasil diperbarui.');
     }
 
+    public function cancelOrder(Request $request, int $orderId): RedirectResponse
+    {
+        $shop  = Auth::user()->shop;
+        $order = Order::where('shop_id', $shop->id)->findOrFail($orderId);
+
+        if (in_array($order->status, ['processing', 'on_delivery', 'delivered'])) {
+            return back()->with('error', 'Pesanan yang sedang dimasak atau diantar tidak dapat dibatalkan.');
+        }
+
+        $this->orderService->updateStatus($order, 'cancelled');
+
+        if ($order->payment) {
+            $order->payment->update(['status' => 'failed']);
+        }
+
+        return back()->with('success', 'Pesanan berhasil dibatalkan dan stok produk telah dikembalikan.');
+    }
+
     public function requestDriver(int $orderId): RedirectResponse
     {
         $shop  = Auth::user()->shop;

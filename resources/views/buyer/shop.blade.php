@@ -111,8 +111,8 @@
 </div>
 
 <!-- Add to Cart Toast -->
-<div class="position-fixed bottom-0 start-50 translate-middle-x w-100" style="max-width:480px; z-index:500; padding:0 12px 90px;">
-    <div id="cart-toast" class="d-none">
+<div class="position-fixed bottom-0 start-50 translate-middle-x w-100" style="max-width:480px; z-index:900; padding:0 12px 75px; pointer-events:none;">
+    <div id="cart-toast" class="d-none" style="pointer-events:auto;">
         <div class="d-flex align-items-center justify-content-between p-3 rounded-4"
              style="background:#1F2937; color:white; box-shadow:0 8px 24px rgba(0,0,0,.3);">
             <div>

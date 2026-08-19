@@ -11,7 +11,9 @@ class RoleSeeder extends Seeder
 {
     public function run(): void
     {
-        // Create roles
+        // ----------------------------------------------------------------
+        // Roles: admin, seller (pemilik warung), buyer (pembeli), driver (pengantar)
+        // ----------------------------------------------------------------
         $roles = ['admin', 'seller', 'buyer', 'driver'];
 
         foreach ($roles as $role) {
@@ -19,7 +21,9 @@ class RoleSeeder extends Seeder
             Role::firstOrCreate(['name' => $role, 'guard_name' => 'api']);
         }
 
-        // Admin user
+        // ----------------------------------------------------------------
+        // Admin
+        // ----------------------------------------------------------------
         $admin = User::firstOrCreate(
             ['email' => 'admin@jajanku.id'],
             [
@@ -30,20 +34,24 @@ class RoleSeeder extends Seeder
         );
         $admin->syncRoles(['admin']);
 
-        // Demo Seller
+        // ----------------------------------------------------------------
+        // Pemilik Warung (seller): satu-satunya seller di aplikasi
+        // ----------------------------------------------------------------
         $seller = User::firstOrCreate(
-            ['email' => 'seller@jajanku.id'],
+            ['email' => 'pemilik@jajanku.id'],
             [
-                'name'     => 'Warung Bu Siti',
+                'name'     => 'Bu Ipa',
                 'password' => Hash::make('password'),
                 'phone'    => '08100000002',
             ]
         );
         $seller->syncRoles(['seller']);
 
+        // ----------------------------------------------------------------
         // Demo Buyer
+        // ----------------------------------------------------------------
         $buyer = User::firstOrCreate(
-            ['email' => 'buyer@jajanku.id'],
+            ['email' => 'pembeli@jajanku.id'],
             [
                 'name'     => 'Budi Santoso',
                 'password' => Hash::make('password'),
@@ -52,7 +60,9 @@ class RoleSeeder extends Seeder
         );
         $buyer->syncRoles(['buyer']);
 
+        // ----------------------------------------------------------------
         // Demo Driver
+        // ----------------------------------------------------------------
         $driver = User::firstOrCreate(
             ['email' => 'driver@jajanku.id'],
             [
@@ -63,6 +73,6 @@ class RoleSeeder extends Seeder
         );
         $driver->syncRoles(['driver']);
 
-        $this->command->info('Roles and demo users seeded successfully!');
+        $this->command->info('✅ Roles dan akun demo berhasil di-seed!');
     }
 }
