@@ -224,8 +224,8 @@ class OrderService
             // Broadcast ke buyer & seller: status berubah
             broadcast(new OrderStatusUpdated($updatedOrder));
 
-            // Jika status menjadi on_delivery, beritahu semua driver ada job baru
-            if ($status === Order::STATUS_ON_DELIVERY) {
+            // Jika status menjadi on_delivery DAN tipe pengiriman adalah delivery (bukan pickup), beritahu driver
+            if ($status === Order::STATUS_ON_DELIVERY && $updatedOrder->delivery_type === 'delivery') {
                 broadcast(new NewDriverJobAvailable($updatedOrder));
             }
 

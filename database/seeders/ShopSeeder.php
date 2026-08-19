@@ -21,6 +21,7 @@ class ShopSeeder extends Seeder
             ['name' => 'Gorengan',         'slug' => 'gorengan',         'icon' => '🍢'],
             ['name' => 'Bundling 1 Porsi', 'slug' => 'bundling-porsi',   'icon' => '🍜'],
             ['name' => 'Minuman',          'slug' => 'minuman',          'icon' => '🥤'],
+            ['name' => 'Dessert',          'slug' => 'dessert',          'icon' => '🍩'],
         ];
 
         foreach ($categories as $cat) {
@@ -30,6 +31,7 @@ class ShopSeeder extends Seeder
         $gorengan = Category::where('slug', 'gorengan')->first();
         $bundling = Category::where('slug', 'bundling-porsi')->first();
         $minuman  = Category::where('slug', 'minuman')->first();
+        $dessert  = Category::where('slug', 'dessert')->first();
 
         // ----------------------------------------------------------------
         // Warung Bu Ipa - 1 warung tunggal
@@ -39,8 +41,8 @@ class ShopSeeder extends Seeder
             [
                 'user_id'     => $seller->id,
                 'name'        => 'Warung Bu Ipa',
-                'description' => 'Temukan jajanan SD mu disini! Gorengan, bundling porsi, dan minuman segar.',
-                'address'     => 'Jl. Kampus No. 1, Area Kantin',
+                'description' => 'Temukan jajanan SD mu disini! Gorengan, bundling porsi, minuman segar, dan dessert.',
+                'address'     => 'Dusun 1 desa keraton, Area kantin Sebelah sd',
                 'latitude'    => -6.9147,
                 'longitude'   => 107.6098,
                 'status'      => 'active',
@@ -173,7 +175,29 @@ class ShopSeeder extends Seeder
             );
         }
 
-        $total = count($gorenganMenu) + count($bundlingMenu) + count($minumanMenu);
+        // ----------------------------------------------------------------
+        // Menu Dessert
+        // ----------------------------------------------------------------
+        $dessertMenu = [
+            ['name' => 'Donat', 'price' => 1000],
+            ['name' => 'Roti',  'price' => 2000],
+        ];
+
+        foreach ($dessertMenu as $item) {
+            Product::firstOrCreate(
+                ['shop_id' => $shop->id, 'name' => $item['name']],
+                [
+                    'shop_id'      => $shop->id,
+                    'category_id'  => $dessert->id,
+                    'price'        => $item['price'],
+                    'description'  => $item['name'] . ' - dessert manis lezat',
+                    'is_available' => true,
+                    'stock'        => 50,
+                ]
+            );
+        }
+
+        $total = count($gorenganMenu) + count($bundlingMenu) + count($minumanMenu) + count($dessertMenu);
         $this->command->info("✅ Warung Bu Ipa + {$total} produk berhasil di-seed!");
     }
 }

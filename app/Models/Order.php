@@ -71,6 +71,18 @@ class Order extends Model
     // Status label helper
     public function getStatusLabelAttribute(): string
     {
+        if ($this->delivery_type === 'pickup') {
+            return match ($this->status) {
+                'pending'     => 'Menunggu Konfirmasi',
+                'confirmed'   => 'Dikonfirmasi',
+                'processing'  => 'Sedang Diproses',
+                'on_delivery' => 'Siap Diambil',
+                'delivered'   => 'Selesai (Sudah Diambil)',
+                'cancelled'   => 'Dibatalkan',
+                default       => 'Unknown',
+            };
+        }
+
         return match ($this->status) {
             'pending'     => 'Menunggu Konfirmasi',
             'confirmed'   => 'Dikonfirmasi',

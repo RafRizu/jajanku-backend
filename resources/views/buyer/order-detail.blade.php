@@ -45,12 +45,13 @@
         </span>
 
         @php
+            $isPickup = $order->delivery_type === 'pickup';
             $steps = [
                 'pending'     => ['label' => 'Menunggu Konfirmasi', 'icon' => '⏳'],
                 'confirmed'   => ['label' => 'Dikonfirmasi Penjual', 'icon' => '✅'],
                 'processing'  => ['label' => 'Sedang Diproses', 'icon' => '👨‍🍳'],
-                'on_delivery' => ['label' => 'Dalam Pengiriman', 'icon' => '🛵'],
-                'delivered'   => ['label' => 'Selesai Diantar', 'icon' => '🎉'],
+                'on_delivery' => ['label' => $isPickup ? 'Siap Diambil di Warung' : 'Dalam Pengiriman', 'icon' => $isPickup ? '🏃' : '🛵'],
+                'delivered'   => ['label' => $isPickup ? 'Selesai (Sudah Diambil)' : 'Selesai Diantar', 'icon' => '🎉'],
             ];
             $statusOrder = array_keys($steps);
             $currentIdx  = array_search($order->status, $statusOrder);
@@ -79,6 +80,21 @@
         @endforeach
     </div>
 
+    @if($isPickup)
+    <!-- Pickup Info Card (No Driver Needed) -->
+    <div class="card border-0 mb-3 p-3" style="border-radius:16px; box-shadow:0 2px 8px rgba(0,0,0,.06); background:#F0FDF4; border:1px solid #DCFCE7!important;">
+        <div class="d-flex align-items-center gap-3">
+            <div style="font-size:2.2rem;">🏃</div>
+            <div>
+                <h6 class="fw-800 mb-1" style="color:#166534;">Pesanan Ambil Sendiri (Tanpa Driver)</h6>
+                <p class="small text-muted mb-1">Silakan datang langsung ke warung untuk mengambil pesananmu saat status <strong>Siap Diambil</strong>.</p>
+                <p class="small fw-700 mb-0" style="color:#15803D;">
+                    <i class="bi bi-geo-alt-fill me-1"></i>{{ $order->shop->name }} — {{ $order->shop->address }}
+                </p>
+            </div>
+        </div>
+    </div>
+    @else
     <!-- Live Map Tracking Card -->
     <div class="card border-0 mb-3 p-3" style="border-radius:16px; box-shadow:0 2px 8px rgba(0,0,0,.06);" id="map-card">
         <div class="d-flex justify-content-between align-items-center mb-2">
@@ -94,6 +110,7 @@
             <span>🏠 Tujuan</span>
         </div>
     </div>
+    @endif
 
     <!-- Order Items -->
     <div class="card border-0 mb-3 p-3" style="border-radius:16px; box-shadow:0 2px 8px rgba(0,0,0,.06);">
@@ -177,6 +194,8 @@ let driverCoords = [{{ $driverLat }}, {{ $driverLng }}];
 let trackingMap, shopMarker, buyerMarker, driverMarker, routePolyline;
 
 function initTrackingMap() {
+    const mapEl = document.getElementById('tracking-map');
+    if (!mapEl) return;
     trackingMap = L.map('tracking-map').setView(driverCoords, 14);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {

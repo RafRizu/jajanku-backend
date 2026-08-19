@@ -3,6 +3,7 @@
 namespace Tests\Unit\Services;
 
 use App\Models\Category;
+use App\Models\Order;
 use App\Models\Product;
 use App\Models\Shop;
 use App\Models\User;
@@ -52,6 +53,7 @@ class OrderServiceTest extends TestCase
             'name' => 'Nasi Goreng Spesial',
             'price' => 15000,
             'is_available' => true,
+            'stock' => 50,
         ]);
 
         $this->product2 = Product::create([
@@ -60,6 +62,7 @@ class OrderServiceTest extends TestCase
             'name' => 'Es Teh Manis',
             'price' => 5000,
             'is_available' => true,
+            'stock' => 50,
         ]);
     }
 
@@ -110,5 +113,31 @@ class OrderServiceTest extends TestCase
 
         $this->assertEquals(35000, $cartData['total']);
         $this->assertEquals(2, $cartData['count']);
+    }
+
+    public function test_pickup_order_does_not_broadcast_driver_job(): void
+    {
+        \Illuminate\Support\Facades\Event::fake([
+            \App\Events\NewDriverJobAvailable::class,
+            \App\Events\OrderStatusUpdated::class,
+        ]);
+
+        $order = Order::create([
+            'user_id'       => $this->buyer->id,
+            'shop_id'       => $this->shop->id,
+            'delivery_type' => 'pickup',
+            'status'        => Order::STATUS_PROCESSING,
+            'total_price'   => 15000,
+            'delivery_fee'  => 0,
+        ]);
+
+        $this->assertEquals('Sedang Diproses', $order->status_label);
+
+        $updated = $this->orderService->updateStatus($order, Order::STATUS_ON_DELIVERY);
+
+        $this->assertEquals('Siap Diambil', $updated->status_label);
+
+        \Illuminate\Support\Facades\Event::assertDispatched(\App\Events\OrderStatusUpdated::class);
+        \Illuminate\Support\Facades\Event::assertNotDispatched(\App\Events\NewDriverJobAvailable::class);
     }
 }

@@ -176,28 +176,51 @@
             </div>
 
             @elseif($order->status === 'processing')
-            {{-- Step 3: Minta driver --}}
+            {{-- Step 3: Makanan selesai dimasak --}}
             <div class="p-2 rounded-3 mb-2" style="background:#FFEDD5;border:1px solid #FED7AA;">
                 <p class="small fw-700 mb-1" style="color:#C2410C;">🍳 Sedang dimasak. Tap jika makanan sudah siap!</p>
+                @if($order->delivery_type === 'pickup')
+                <form method="POST" action="{{ route('seller.orders.driver', $order->id) }}">
+                    @csrf
+                    <button type="submit" class="btn w-100 fw-700 py-3 text-white" style="font-size:1rem;border-radius:14px;background:linear-gradient(135deg,#10B981,#059669);border:none;">
+                        🏃 MAKANAN SIAP (SIAP DIAMBIL PEMBELI)
+                    </button>
+                </form>
+                @else
                 <form method="POST" action="{{ route('seller.orders.driver', $order->id) }}">
                     @csrf
                     <button type="submit" class="btn w-100 fw-700 py-3 text-white" style="font-size:1rem;border-radius:14px;background:linear-gradient(135deg,#EA580C,#F97316);border:none;">
                         🛵 MAKANAN SIAP: MINTA DRIVER
                     </button>
                 </form>
+                @endif
             </div>
 
             @elseif($order->status === 'on_delivery')
+            @if($order->delivery_type === 'pickup')
+            <div class="p-2 rounded-3 mb-2" style="background:#ECFDF5;border:1px solid #A7F3D0;">
+                <p class="fw-700 mb-2" style="color:#047857;font-size:.9rem;">🏃 Pesanan Siap Diambil! Menunggu pembeli mengambil di warung.</p>
+                <form method="POST" action="{{ route('seller.orders.process', $order->id) }}">
+                    @csrf
+                    <button type="submit" class="btn w-100 fw-700 py-3 text-white" style="font-size:.95rem;border-radius:12px;background:linear-gradient(135deg,#10B981,#059669);border:none;">
+                        ✅ PEMBELI SUDAH MENGAMBIL PESANAN
+                    </button>
+                </form>
+            </div>
+            @else
             <div class="p-2 rounded-3 text-center" style="background:#FFF7F5;border:1px solid #FFE8D6;">
                 <p class="fw-700 mb-0" style="color:#C2410C;font-size:.9rem;">🛵 Driver sedang mengantarkan pesanan...</p>
                 @if($order->driver)
                 <p class="small text-muted mb-0 mt-1">Driver: <strong>{{ $order->driver->name }}</strong></p>
                 @endif
             </div>
+            @endif
 
             @elseif($order->status === 'delivered')
             <div class="p-2 rounded-3 text-center" style="background:#D1FAE5;border:1px solid #6EE7B7;">
-                <p class="fw-700 mb-0" style="color:#065F46;font-size:.9rem;">🎉 Pesanan sudah selesai diantar!</p>
+                <p class="fw-700 mb-0" style="color:#065F46;font-size:.9rem;">
+                    {{ $order->delivery_type === 'pickup' ? '🎉 Pesanan selesai diambil pembeli!' : '🎉 Pesanan sudah selesai diantar!' }}
+                </p>
             </div>
 
             @elseif($order->status === 'cancelled')

@@ -152,6 +152,7 @@ class OrderController extends Controller
         ]);
 
         $orders = Order::where('status', 'on_delivery')
+            ->where('delivery_type', 'delivery')
             ->whereNull('driver_id')
             ->with(['shop', 'buyer'])
             ->latest()

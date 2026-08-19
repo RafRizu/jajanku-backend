@@ -22,6 +22,7 @@ class DeliveryController extends Controller
     public function jobs(): View
     {
         $availableOrders = Order::where('status', 'on_delivery')
+            ->where('delivery_type', 'delivery')
             ->whereNull('driver_id')
             ->with(['shop', 'buyer', 'items'])
             ->latest()

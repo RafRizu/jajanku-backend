@@ -91,14 +91,20 @@ class DashboardController extends Controller
         $order = Order::where('shop_id', $shop->id)->findOrFail($orderId);
 
         $newStatus = match ($order->status) {
-            'pending'  => 'confirmed',
-            'confirmed' => 'processing',
-            default    => $order->status,
+            'pending'     => 'confirmed',
+            'confirmed'   => 'processing',
+            'processing'  => 'on_delivery',
+            'on_delivery' => $order->delivery_type === 'pickup' ? 'delivered' : $order->status,
+            default       => $order->status,
         };
 
         $this->orderService->updateStatus($order, $newStatus);
 
-        return back()->with('success', 'Status pesanan berhasil diperbarui.');
+        $msg = ($order->delivery_type === 'pickup' && $newStatus === 'delivered')
+            ? 'Pesanan telah diselesaikan (sudah diambil oleh pembeli).'
+            : 'Status pesanan berhasil diperbarui.';
+
+        return back()->with('success', $msg);
     }
 
     public function cancelOrder(Request $request, int $orderId): RedirectResponse
@@ -107,7 +113,7 @@ class DashboardController extends Controller
         $order = Order::where('shop_id', $shop->id)->findOrFail($orderId);
 
         if (in_array($order->status, ['processing', 'on_delivery', 'delivered'])) {
-            return back()->with('error', 'Pesanan yang sedang dimasak atau diantar tidak dapat dibatalkan.');
+            return back()->with('error', 'Pesanan yang sedang dimasak atau diantar/diambil tidak dapat dibatalkan.');
         }
 
         $this->orderService->updateStatus($order, 'cancelled');
@@ -126,6 +132,10 @@ class DashboardController extends Controller
 
         $this->orderService->updateStatus($order, 'on_delivery');
 
-        return back()->with('success', 'Driver telah diminta. Pesanan menunggu driver.');
+        $message = $order->delivery_type === 'pickup'
+            ? 'Pesanan telah ditandai Siap Diambil di Warung.'
+            : 'Driver telah diminta. Pesanan menunggu driver.';
+
+        return back()->with('success', $message);
     }
 }
