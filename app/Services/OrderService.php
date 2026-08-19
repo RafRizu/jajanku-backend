@@ -143,12 +143,12 @@ class OrderService
                 ]);
 
                 // Deduct stock dynamically & update availability
-                $product = Product::find($item['product_id']);
+                $product = Product::where('id', $item['product_id'])->lockForUpdate()->first();
                 if ($product) {
                     $newStock = max(0, $product->stock - $item['quantity']);
                     $product->update([
                         'stock'        => $newStock,
-                        'is_available' => $newStock > 0 ? $product->is_available : false,
+                        'is_available' => $newStock > 0,
                     ]);
                 }
             }
@@ -194,34 +194,40 @@ class OrderService
 
     /**
      * Update order status (for sellers and drivers).
-     * Restores stock if order is cancelled.
+     * Restores stock atomically if order is cancelled.
      */
     public function updateStatus(Order $order, string $status): Order
     {
-        $previousStatus = $order->status;
-        $order->update(['status' => $status]);
-        $order = $order->fresh();
+        return DB::transaction(function () use ($order, $status) {
+            $lockedOrder = Order::where('id', $order->id)->lockForUpdate()->first();
+            if (!$lockedOrder) {
+                return $order;
+            }
 
-        // Restore stock if cancelled
-        if ($status === Order::STATUS_CANCELLED && $previousStatus !== Order::STATUS_CANCELLED) {
-            foreach ($order->items as $item) {
-                if ($item->product) {
-                    $item->product->increment('stock', $item->quantity);
-                    if ($item->product->stock > 0) {
-                        $item->product->update(['is_available' => true]);
+            $previousStatus = $lockedOrder->status;
+            $lockedOrder->update(['status' => $status]);
+            $updatedOrder = $lockedOrder->fresh();
+
+            // Restore stock if cancelled
+            if ($status === Order::STATUS_CANCELLED && $previousStatus !== Order::STATUS_CANCELLED) {
+                foreach ($updatedOrder->items as $item) {
+                    $product = Product::where('id', $item->product_id)->lockForUpdate()->first();
+                    if ($product) {
+                        $product->increment('stock', $item->quantity);
+                        $product->update(['is_available' => true]);
                     }
                 }
             }
-        }
 
-        // Broadcast ke buyer & seller: status berubah
-        broadcast(new OrderStatusUpdated($order));
+            // Broadcast ke buyer & seller: status berubah
+            broadcast(new OrderStatusUpdated($updatedOrder));
 
-        // Jika status menjadi on_delivery, beritahu semua driver ada job baru
-        if ($status === Order::STATUS_ON_DELIVERY) {
-            broadcast(new NewDriverJobAvailable($order));
-        }
+            // Jika status menjadi on_delivery, beritahu semua driver ada job baru
+            if ($status === Order::STATUS_ON_DELIVERY) {
+                broadcast(new NewDriverJobAvailable($updatedOrder));
+            }
 
-        return $order;
+            return $updatedOrder;
+        });
     }
 }

@@ -41,14 +41,26 @@ class DeliveryController extends Controller
      */
     public function accept(int $orderId): RedirectResponse
     {
-        $order = Order::where('status', 'on_delivery')
-            ->whereNull('driver_id')
-            ->findOrFail($orderId);
+        try {
+            \Illuminate\Support\Facades\DB::transaction(function () use ($orderId) {
+                $order = Order::where('id', $orderId)
+                    ->where('status', 'on_delivery')
+                    ->whereNull('driver_id')
+                    ->lockForUpdate()
+                    ->first();
 
-        $order->update(['driver_id' => Auth::id()]);
+                if (!$order) {
+                    throw new \Exception('Maaf, pesanan ini sudah diambil oleh driver lain.');
+                }
 
-        return redirect()->route('driver.delivery', $orderId)
-            ->with('success', 'Pesanan berhasil diambil! Silakan menuju warung.');
+                $order->update(['driver_id' => Auth::id()]);
+            });
+
+            return redirect()->route('driver.delivery', $orderId)
+                ->with('success', 'Pesanan berhasil diambil! Silakan menuju warung.');
+        } catch (\Exception $e) {
+            return redirect()->route('driver.jobs')->with('error', $e->getMessage());
+        }
     }
 
     /**

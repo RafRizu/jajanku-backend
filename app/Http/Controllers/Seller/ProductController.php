@@ -42,12 +42,17 @@ class ProductController extends Controller
             'description' => ['nullable', 'string'],
             'price'       => ['required', 'numeric', 'min:0'],
             'category_id' => ['required', 'exists:categories,id'],
-            'image'       => ['nullable', 'image', 'max:2048'],
+            'image'       => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
             'stock'       => ['integer', 'min:0'],
         ]);
 
+        $shop = Auth::user()->shop;
+        if (!$shop) {
+            return redirect()->route('seller.shop.edit')->with('error', 'Silakan lengkapi profil warung Anda terlebih dahulu.');
+        }
+
         $data            = $request->only(['name', 'description', 'price', 'category_id', 'stock']);
-        $data['shop_id'] = Auth::user()->shop->id;
+        $data['shop_id'] = $shop->id;
         $data['is_available'] = true;
 
         $this->productService->createProduct($data, $request->file('image'));
@@ -71,7 +76,7 @@ class ProductController extends Controller
             'description' => ['nullable', 'string'],
             'price'       => ['required', 'numeric', 'min:0'],
             'category_id' => ['required', 'exists:categories,id'],
-            'image'       => ['nullable', 'image', 'max:2048'],
+            'image'       => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
             'stock'       => ['integer', 'min:0'],
         ]);
 

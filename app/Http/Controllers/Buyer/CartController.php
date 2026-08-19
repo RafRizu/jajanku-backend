@@ -132,7 +132,7 @@ class CartController extends Controller
     public function uploadProof(Request $request, int $orderId): RedirectResponse
     {
         $request->validate([
-            'proof_image' => ['required', 'image', 'max:2048'],
+            'proof_image' => ['required', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
         ]);
 
         $order = Order::where('user_id', Auth::id())->findOrFail($orderId);

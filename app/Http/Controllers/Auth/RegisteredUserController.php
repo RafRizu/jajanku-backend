@@ -26,7 +26,6 @@ class RegisteredUserController extends Controller
             'email'    => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
             'phone'    => ['nullable', 'string', 'max:20'],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-            'role'     => ['required', 'in:buyer,seller,driver'],
         ]);
 
         $user = User::create([
@@ -36,7 +35,8 @@ class RegisteredUserController extends Controller
             'password' => Hash::make($request->password),
         ]);
 
-        $user->assignRole($request->role);
+        // Security: Public registration defaults to buyer role
+        $user->assignRole('buyer');
 
         event(new Registered($user));
 

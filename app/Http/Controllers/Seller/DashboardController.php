@@ -50,7 +50,7 @@ class DashboardController extends Controller
             'address'     => ['required', 'string', 'max:500'],
             'latitude'    => ['nullable', 'numeric'],
             'longitude'   => ['nullable', 'numeric'],
-            'image'       => ['nullable', 'image', 'max:2048'],
+            'image'       => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:2048'],
         ]);
 
         $data = $request->only(['name', 'description', 'address', 'latitude', 'longitude']);

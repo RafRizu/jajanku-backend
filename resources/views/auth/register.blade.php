@@ -38,22 +38,6 @@
                     @error('phone')<div class="invalid-feedback">{{ $message }}</div>@enderror
                 </div>
 
-                <div class="mb-3">
-                    <label class="form-label fw-600 small text-secondary">Daftar Sebagai</label>
-                    <div class="d-flex gap-2">
-                        @foreach(['buyer' => ['🛒', 'Pembeli'], 'seller' => ['🏪', 'Penjual'], 'driver' => ['🚴', 'Driver']] as $val => $info)
-                        <label class="role-option flex-fill text-center p-2 rounded-3 border-2 {{ old('role') === $val ? 'selected' : '' }}"
-                               style="cursor:pointer; border:2px solid #E5E7EB; transition:all .2s;"
-                               for="role_{{ $val }}">
-                            <input type="radio" name="role" id="role_{{ $val }}" value="{{ $val }}"
-                                   class="d-none" {{ old('role') === $val ? 'checked' : '' }}>
-                            <div style="font-size:1.5rem;">{{ $info[0] }}</div>
-                            <div class="small fw-600 mt-1">{{ $info[1] }}</div>
-                        </label>
-                        @endforeach
-                    </div>
-                    @error('role')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
-                </div>
 
                 <div class="mb-3">
                     <label class="form-label fw-600 small text-secondary">Password</label>
